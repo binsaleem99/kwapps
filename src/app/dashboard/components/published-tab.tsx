@@ -1,0 +1,168 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Globe, ExternalLink, Eye, Code } from 'lucide-react'
+import { Project } from '@/types'
+import { formatDistanceToNow } from 'date-fns'
+import { ar } from 'date-fns/locale'
+
+export function PublishedTab() {
+  const router = useRouter()
+  const [publishedProjects, setPublishedProjects] = useState<Project[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchPublishedProjects()
+  }, [])
+
+  const fetchPublishedProjects = async () => {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'published')
+      .order('updated_at', { ascending: false })
+
+    if (!error && data) {
+      setPublishedProjects(data as Project[])
+    }
+    setIsLoading(false)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-6 bg-slate-200 rounded w-3/4 mb-2" />
+              <div className="h-4 bg-slate-200 rounded w-1/2" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-4 bg-slate-200 rounded w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  if (publishedProjects.length === 0) {
+    return (
+      <Card className="border-dashed border-2">
+        <CardContent className="py-16 text-center">
+          <Globe className="w-20 h-20 mx-auto mb-4 text-slate-300" />
+          <h3 className="text-2xl font-semibold text-slate-900 mb-2">
+            لا توجد مواقع منشورة
+          </h3>
+          <p className="text-slate-600 mb-6 max-w-md mx-auto">
+            لم تقم بنشر أي موقع بعد. قم بإنشاء مشروع جديد ونشره لرؤيته هنا.
+          </p>
+          <Button
+            onClick={() => router.push('/builder')}
+            className="bg-blue-500 hover:bg-blue-600"
+            size="lg"
+          >
+            <Code className="w-5 h-5 ml-2" />
+            إنشاء وموقع ونشره
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {publishedProjects.map((project) => (
+        <Card
+          key={project.id}
+          className="hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+          <CardHeader className="relative">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  <CardTitle className="text-xl truncate">{project.name}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <Badge variant="outline" className="text-xs text-green-700 border-green-300">
+                      نشط
+                    </Badge>
+                  </div>
+                </div>
+                <CardDescription className="line-clamp-2">
+                  {project.description || 'لا يوجد وصف'}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="relative space-y-4">
+            {/* Deployed URL */}
+            {project.deployed_url && (
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Globe className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <a
+                      href={project.deployed_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline truncate"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {project.deployed_url}
+                    </a>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                </div>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="flex items-center justify-between text-sm text-slate-500">
+              <span>
+                نُشر:{' '}
+                {formatDistanceToNow(new Date(project.updated_at), {
+                  addSuffix: true,
+                  locale: ar,
+                })}
+              </span>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => router.push(`/builder?project=${project.id}`)}
+              >
+                <Code className="w-4 h-4 ml-1" />
+                تعديل
+              </Button>
+              {project.deployed_url && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1 bg-blue-500 hover:bg-blue-600"
+                  onClick={() => window.open(project.deployed_url, '_blank')}
+                >
+                  <Eye className="w-4 h-4 ml-1" />
+                  عرض الموقع
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}

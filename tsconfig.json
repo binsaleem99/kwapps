@@ -19,7 +19,7 @@
       }
     ],
     "paths": {
-      "AhmadSaleem@/*": ["./src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
