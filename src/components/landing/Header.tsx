@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,7 +48,13 @@ export function Header() {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/"
+              className="text-sm font-bold link-hover-blue"
+            >
+              الرئيسية
+            </Link>
             <Link
               href="#features"
               className="text-sm font-bold link-hover-blue"
@@ -55,16 +62,22 @@ export function Header() {
               المزايا
             </Link>
             <Link
-              href="#pricing"
+              href="/pricing"
               className="text-sm font-bold link-hover-blue"
             >
               الأسعار
             </Link>
             <Link
-              href="#templates"
+              href="/blog"
               className="text-sm font-bold link-hover-blue"
             >
-              القوالب
+              المدونة
+            </Link>
+            <Link
+              href="/builder"
+              className="text-sm font-bold link-hover-blue"
+            >
+              إنشاء تطبيق
             </Link>
             <Button
               variant="outline"
@@ -84,12 +97,81 @@ export function Header() {
           </nav>
 
           {/* Mobile menu button */}
-          <button className="md:hidden p-2 transition-colors text-slate-600 hover:text-slate-900">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+          <button
+            className="md:hidden p-2 transition-colors text-slate-600 hover:text-slate-900"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="w-6 h-6" />
+            ) : (
+              <Menu className="w-6 h-6" />
+            )}
           </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white py-4">
+            <nav className="flex flex-col gap-4 px-4">
+              <Link
+                href="/"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                الرئيسية
+              </Link>
+              <Link
+                href="#features"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                المزايا
+              </Link>
+              <Link
+                href="/pricing"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                الأسعار
+              </Link>
+              <Link
+                href="/blog"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                المدونة
+              </Link>
+              <Link
+                href="/builder"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                إنشاء تطبيق
+              </Link>
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-bold w-full"
+                  asChild
+                >
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    تسجيل الدخول
+                  </Link>
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-primary text-white font-bold w-full"
+                  asChild
+                >
+                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    ابدأ مجاناً
+                  </Link>
+                </Button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );

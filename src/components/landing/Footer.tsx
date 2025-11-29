@@ -28,23 +28,28 @@ export function Footer() {
             <h3 className="mb-4 text-sm font-black" style={{ color: 'rgb(17, 24, 39)' }}>المنتج</h3>
             <ul className="space-y-3 text-sm">
               <li>
+                <Link href="/builder" className="link-hover-blue">
+                  إنشاء تطبيق
+                </Link>
+              </li>
+              <li>
                 <Link href="#features" className="link-hover-blue">
                   المزايا
                 </Link>
               </li>
               <li>
-                <Link href="#pricing" className="link-hover-blue">
+                <Link href="/pricing" className="link-hover-blue">
                   الأسعار
+                </Link>
+              </li>
+              <li>
+                <Link href="/blog" className="link-hover-blue">
+                  المدونة
                 </Link>
               </li>
               <li>
                 <Link href="#templates" className="link-hover-blue">
                   القوالب
-                </Link>
-              </li>
-              <li>
-                <Link href="/docs" className="link-hover-blue">
-                  التوثيق
                 </Link>
               </li>
             </ul>
