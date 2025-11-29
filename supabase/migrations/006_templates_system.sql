@@ -58,17 +58,9 @@ CREATE POLICY "Anyone can view active templates"
   FOR SELECT
   USING (is_active = true);
 
--- Templates: Admin can manage all templates (assumes admin role exists)
-CREATE POLICY "Admin can manage templates"
-  ON app_templates
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  );
+-- Templates: Only authenticated users with service role can manage templates
+-- For now, we'll allow insert/update via service role only (backend API)
+-- Frontend users can only read active templates
 
 -- Template Usage: Users can view their own usage
 CREATE POLICY "Users can view own template usage"
