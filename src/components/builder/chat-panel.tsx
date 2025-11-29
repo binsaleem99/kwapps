@@ -42,24 +42,38 @@ export default function ChatPanel({ projectId, onCodeGenerated, currentCode }: C
   async function fetchMessages() {
     try {
       const response = await fetch(`/api/projects/${projectId}/messages`)
-      if (response.ok) {
-        const data = await response.json()
-        setMessages(data.messages || [])
+      if (!response.ok) {
+        console.error(`Failed to fetch messages: ${response.status}`)
+        setMessages([])
+        return
       }
+      const data = await response.json()
+      setMessages(data.messages || [])
     } catch (err) {
       console.error('Failed to fetch messages:', err)
+      setMessages([])
     }
   }
 
   async function fetchUsage() {
     try {
       const response = await fetch('/api/generate')
-      if (response.ok) {
-        const data = await response.json()
-        setUsage(data.usage)
+      if (!response.ok) {
+        console.error(`Failed to fetch usage: ${response.status}`)
+        setUsage({ current: 0, limit: 3, remaining: 3 })
+        return
+      }
+      const data = await response.json()
+      if (data.today) {
+        setUsage({
+          current: data.today.used || 0,
+          limit: data.today.limit || 3,
+          remaining: data.today.remaining || 0,
+        })
       }
     } catch (err) {
       console.error('Failed to fetch usage:', err)
+      setUsage({ current: 0, limit: 3, remaining: 3 })
     }
   }
 

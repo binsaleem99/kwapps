@@ -28,9 +28,17 @@ export async function GET(
       .from('projects')
       .select('id, user_id')
       .eq('id', projectId)
-      .single()
+      .maybeSingle()
 
-    if (projectError || !project) {
+    if (projectError) {
+      console.error('Project verification error:', projectError)
+      return NextResponse.json(
+        { error: 'خطأ في التحقق من المشروع' },
+        { status: 500 }
+      )
+    }
+
+    if (!project) {
       return NextResponse.json(
         { error: 'المشروع غير موجود' },
         { status: 404 }
@@ -52,7 +60,11 @@ export async function GET(
       .order('created_at', { ascending: true })
 
     if (messagesError) {
-      throw messagesError
+      console.error('Error fetching messages:', messagesError)
+      return NextResponse.json(
+        { error: 'فشل جلب الرسائل' },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({

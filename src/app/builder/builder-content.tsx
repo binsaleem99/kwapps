@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ChatPanel from '@/components/builder/chat-panel'
 import PreviewPanel from '@/components/builder/preview-panel'
+import { BuilderErrorBoundary } from '@/components/builder/error-boundary'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Sparkles, Code, ArrowLeft } from 'lucide-react'
+import { Sparkles, Code, ArrowLeft, AlertCircle } from 'lucide-react'
 import { DeployButton } from '@/components/deploy/DeployButton'
 
 export function BuilderPageContent() {
@@ -19,71 +20,92 @@ export function BuilderPageContent() {
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
   const [projectName, setProjectName] = useState<string>('مشروع جديد')
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuthAndLoadProject()
   }, [projectIdParam])
 
   async function checkAuthAndLoadProject() {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    // SECURITY: Use getUser() to validate with Auth server
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
+      // SECURITY: Use getUser() to validate with Auth server
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (authError || !user) {
-      router.push('/login?redirectTo=/builder')
-      return
-    }
+      if (authError || !user) {
+        router.push('/login?redirectTo=/builder')
+        return
+      }
 
-    // If project ID provided, load existing project
-    if (projectIdParam) {
-      const { data: project, error: projectError } = await supabase
-        .from('projects')
-        .select('id, name, generated_code, status')
-        .eq('id', projectIdParam)
-        .eq('user_id', user.id)
-        .single()
+      // If project ID provided, load existing project
+      if (projectIdParam) {
+        const { data: project, error: projectError } = await supabase
+          .from('projects')
+          .select('id, name, generated_code, status')
+          .eq('id', projectIdParam)
+          .eq('user_id', user.id)
+          .maybeSingle()
 
-      if (!projectError && project) {
-        setProjectId(project.id)
-        setProjectName(project.name)
-        setGeneratedCode(project.generated_code || null)
+        if (projectError) {
+          console.error('Error loading project:', projectError)
+          await createNewProject(user.id)
+        } else if (project) {
+          setProjectId(project.id)
+          setProjectName(project.name)
+          setGeneratedCode(project.generated_code || null)
+        } else {
+          // Project not found, create new one
+          await createNewProject(user.id)
+        }
       } else {
-        // Project not found or doesn't belong to user, create new one
+        // No project ID, create new project
         await createNewProject(user.id)
       }
-    } else {
-      // No project ID, create new project
-      await createNewProject(user.id)
-    }
 
-    setIsLoading(false)
+      setIsLoading(false)
+    } catch (error) {
+      console.error('Failed to load builder:', error)
+      setIsLoading(false)
+      setError('حدث خطأ أثناء تحميل المشروع. يرجى المحاولة مرة أخرى.')
+    }
   }
 
   async function createNewProject(userId: string) {
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
 
-    const newProjectName = `مشروع ${new Date().toLocaleDateString('ar-KW', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}`
+      const newProjectName = `مشروع ${new Date().toLocaleDateString('ar-KW', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}`
 
-    const { data: newProject, error } = await supabase
-      .from('projects')
-      .insert({
-        user_id: userId,
-        name: newProjectName,
-        status: 'draft',
-      })
-      .select('id, name')
-      .single()
+      const { data: newProject, error } = await supabase
+        .from('projects')
+        .insert({
+          user_id: userId,
+          name: newProjectName,
+          status: 'draft',
+        })
+        .select('id, name')
+        .maybeSingle()
 
-    if (!error && newProject) {
-      setProjectId(newProject.id)
-      setProjectName(newProject.name)
-      // Update URL with new project ID
-      router.replace(`/builder?project=${newProject.id}`)
+      if (error) {
+        console.error('Failed to create project:', error)
+        setError('فشل إنشاء المشروع. يرجى المحاولة مرة أخرى.')
+        return
+      }
+
+      if (newProject) {
+        setProjectId(newProject.id)
+        setProjectName(newProject.name)
+        // Update URL with new project ID
+        router.replace(`/builder?project=${newProject.id}`)
+      }
+    } catch (error) {
+      console.error('Unexpected error creating project:', error)
+      setError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.')
     }
   }
 
@@ -97,6 +119,36 @@ export function BuilderPageContent() {
         <div className="text-center">
           <Sparkles className="w-12 h-12 text-blue-500 mx-auto mb-4 animate-pulse" />
           <p className="text-lg text-gray-600 font-['Cairo']">جاري التحميل...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center max-w-md px-4">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <p className="text-lg text-red-600 font-['Cairo'] mb-4">{error}</p>
+          <div className="flex gap-3 justify-center">
+            <Button
+              onClick={() => {
+                setError(null)
+                setIsLoading(true)
+                checkAuthAndLoadProject()
+              }}
+              className="font-['Cairo']"
+            >
+              إعادة المحاولة
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="font-['Cairo']"
+            >
+              العودة للوحة التحكم
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -161,16 +213,20 @@ export function BuilderPageContent() {
       <div className="flex-1 flex overflow-hidden">
         {/* Preview Panel - Left Side (70% width) */}
         <div className="w-[70%] flex flex-col bg-slate-100">
-          <PreviewPanel code={generatedCode} isLoading={false} />
+          <BuilderErrorBoundary fallbackMessage="حدث خطأ في معاينة التطبيق.">
+            <PreviewPanel code={generatedCode} isLoading={false} />
+          </BuilderErrorBoundary>
         </div>
 
         {/* Chat Panel - Right Side (30% width) */}
         <div className="w-[30%] flex flex-col">
-          <ChatPanel
-            projectId={projectId}
-            onCodeGenerated={handleCodeGenerated}
-            currentCode={generatedCode || undefined}
-          />
+          <BuilderErrorBoundary fallbackMessage="حدث خطأ في لوحة المحادثة.">
+            <ChatPanel
+              projectId={projectId}
+              onCodeGenerated={handleCodeGenerated}
+              currentCode={generatedCode || undefined}
+            />
+          </BuilderErrorBoundary>
         </div>
       </div>
     </div>
