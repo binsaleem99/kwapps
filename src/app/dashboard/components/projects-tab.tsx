@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, ExternalLink, Code, Trash2, FileCode, Github } from 'lucide-react'
+import { Plus, ExternalLink, Code, Trash2, FileCode } from 'lucide-react'
 import { Project } from '@/types'
 import { formatDistanceToNow } from 'date-fns'
 import { ar } from 'date-fns/locale'
@@ -173,19 +173,6 @@ export function ProjectsTab() {
                       title="زيارة التطبيق"
                     >
                       <ExternalLink className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {project.github_repo_url && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        window.open(project.github_repo_url, '_blank')
-                      }}
-                      title="عرض الكود على GitHub"
-                    >
-                      <Github className="w-4 h-4" />
                     </Button>
                   )}
                 </div>

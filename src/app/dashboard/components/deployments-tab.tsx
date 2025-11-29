@@ -32,7 +32,9 @@ interface Deployment {
   created_at: string
   projects: {
     name: string
-  } | null
+  } | {
+    name: string
+  }[] | null
 }
 
 export function DeploymentsTab() {
@@ -212,7 +214,9 @@ export function DeploymentsTab() {
                   {deployments.map((deployment) => (
                     <TableRow key={deployment.id}>
                       <TableCell className="font-medium font-['Cairo']">
-                        {deployment.projects?.name || 'مشروع محذوف'}
+                        {Array.isArray(deployment.projects)
+                          ? deployment.projects[0]?.name || 'مشروع محذوف'
+                          : deployment.projects?.name || 'مشروع محذوف'}
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-1">

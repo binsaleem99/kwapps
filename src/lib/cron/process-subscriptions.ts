@@ -156,9 +156,9 @@ export async function processSubscriptions() {
     console.log(`[CRON] Processing complete: ${results.success} successful, ${results.failed} failed`)
 
     return {
-      success: true,
       processed: dueSubscriptions.length,
       ...results,
+      success: true,
     }
   } catch (error: any) {
     console.error('[CRON] Fatal error in subscription processing:', error)

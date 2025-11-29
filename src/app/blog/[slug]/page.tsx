@@ -4,13 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import { BlogPostView } from '@/components/blog/blog-post-view'
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {
   const supabase = await createClient()
+  const { slug } = await params
 
   const { data: post } = await supabase
     .from('blog_posts')
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
         secondary_keywords
       )
     `)
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('published', true)
     .single()
 
@@ -77,13 +78,14 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       ] : []
     },
     alternates: {
-      canonical: `/blog/${params.slug}`
+      canonical: `/blog/${slug}`
     }
   }
 }
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const supabase = await createClient()
+  const { slug } = await params
 
   const { data: post, error } = await supabase
     .from('blog_posts')
@@ -116,7 +118,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         likes_count
       )
     `)
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('published', true)
     .single()
 
