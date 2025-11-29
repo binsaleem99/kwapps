@@ -68,6 +68,12 @@ export function Header() {
               الأسعار
             </Link>
             <Link
+              href="/templates"
+              className="text-sm font-bold link-hover-blue"
+            >
+              القوالب
+            </Link>
+            <Link
               href="/blog"
               className="text-sm font-bold link-hover-blue"
             >
@@ -133,6 +139,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 الأسعار
+              </Link>
+              <Link
+                href="/templates"
+                className="text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                القوالب
               </Link>
               <Link
                 href="/blog"
