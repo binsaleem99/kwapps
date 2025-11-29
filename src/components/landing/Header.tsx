@@ -4,10 +4,17 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +23,30 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    // Check current session
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
 
   return (
     <header
@@ -85,21 +116,45 @@ export function Header() {
             >
               إنشاء تطبيق
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-bold border-slate-300 text-slate-900 hover:border-blue-500"
-              asChild
-            >
-              <Link href="/login">تسجيل الدخول</Link>
-            </Button>
-            <Button
-              size="sm"
-              className="bg-gradient-primary text-white font-bold shadow-glow hover:scale-105 transition-transform"
-              asChild
-            >
-              <Link href="/signup">ابدأ مجاناً</Link>
-            </Button>
+            {loading ? (
+              <div className="w-32 h-10 bg-slate-200 animate-pulse rounded-lg" />
+            ) : user ? (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-gradient-primary text-white font-bold shadow-glow hover:scale-105 transition-transform"
+                  asChild
+                >
+                  <Link href="/dashboard">لوحة التحكم</Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="font-bold border-slate-300 text-slate-900 hover:border-red-500"
+                >
+                  تسجيل الخروج
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-bold border-slate-300 text-slate-900 hover:border-blue-500"
+                  asChild
+                >
+                  <Link href="/login">تسجيل الدخول</Link>
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-primary text-white font-bold shadow-glow hover:scale-105 transition-transform"
+                  asChild
+                >
+                  <Link href="/signup">ابدأ مجاناً</Link>
+                </Button>
+              </>
+            )}
           </nav>
 
           {/* Mobile menu button */}
@@ -162,25 +217,54 @@ export function Header() {
                 إنشاء تطبيق
               </Link>
               <div className="flex flex-col gap-2 pt-2 border-t border-slate-200">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="font-bold w-full"
-                  asChild
-                >
-                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    تسجيل الدخول
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-primary text-white font-bold w-full"
-                  asChild
-                >
-                  <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    ابدأ مجاناً
-                  </Link>
-                </Button>
+                {loading ? (
+                  <div className="w-full h-10 bg-slate-200 animate-pulse rounded-lg" />
+                ) : user ? (
+                  <>
+                    <Button
+                      size="sm"
+                      className="bg-gradient-primary text-white font-bold w-full"
+                      asChild
+                    >
+                      <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                        لوحة التحكم
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleLogout();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="font-bold w-full hover:border-red-500"
+                    >
+                      تسجيل الخروج
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="font-bold w-full"
+                      asChild
+                    >
+                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                        تسجيل الدخول
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-gradient-primary text-white font-bold w-full"
+                      asChild
+                    >
+                      <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                        ابدأ مجاناً
+                      </Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>

@@ -97,7 +97,7 @@ export default function Error({
         <div className="mt-12 pt-8 border-t border-slate-200">
           <p className="text-sm text-slate-500">
             إذا استمرت المشكلة، يرجى{' '}
-            <Link href="/#contact" className="text-blue-500 hover:underline font-medium">
+            <Link href="/contact" className="text-blue-500 hover:underline font-medium">
               الاتصال بفريق الدعم
             </Link>
           </p>
