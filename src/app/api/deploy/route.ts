@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createVercelClient } from '@/lib/vercel/client'
 import { transformReactToHTML, validateReactCode } from '@/lib/deploy/transform-code'
+import { github } from '@/lib/github/client'
 
 /**
  * POST /api/deploy
@@ -179,7 +180,59 @@ export async function POST(request: NextRequest) {
     }
 
     // ====================================================================
-    // 9. TRANSFORM CODE TO HTML
+    // 9. CREATE GITHUB REPOSITORY (OPTIONAL)
+    // ====================================================================
+    let githubRepoUrl: string | undefined
+    try {
+      const repoName = `${subdomain}-app`
+      const githubResult = await github.createRepository({
+        name: repoName,
+        description: `${project.name} - Generated with KW APPS`,
+        isPrivate: false,
+        userId: user.id,
+      })
+
+      githubRepoUrl = githubResult.repoUrl
+
+      // Push code to repository
+      const files = [
+        {
+          path: 'README.md',
+          content: `# ${project.name}\n\nGenerated with KW APPS AI Builder\n\nDeployed at: https://${subdomain}.vercel.app\n`,
+        },
+        {
+          path: 'src/App.tsx',
+          content: project.generated_code,
+        },
+        {
+          path: 'package.json',
+          content: JSON.stringify({
+            name: repoName,
+            version: '1.0.0',
+            private: true,
+            dependencies: {
+              react: '^18.2.0',
+              'react-dom': '^18.2.0',
+            },
+          }, null, 2),
+        },
+      ]
+
+      await github.pushCode({
+        owner: githubResult.owner,
+        repo: githubResult.name,
+        files,
+        commitMessage: `Initial commit - Generated with KW APPS\n\n🤖 Created by AI`,
+      })
+
+      console.log(`GitHub repository created: ${githubRepoUrl}`)
+    } catch (githubError: any) {
+      console.error('GitHub creation failed (non-blocking):', githubError)
+      // Don't fail deployment if GitHub fails
+    }
+
+    // ====================================================================
+    // 10. TRANSFORM CODE TO HTML
     // ====================================================================
     let htmlContent: string
     try {
@@ -204,7 +257,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ====================================================================
-    // 10. DEPLOY TO VERCEL
+    // 11. DEPLOY TO VERCEL
     // ====================================================================
     try {
       const vercelClient = createVercelClient()
@@ -212,7 +265,10 @@ export async function POST(request: NextRequest) {
       // Update status: building
       await supabase
         .from('deployments')
-        .update({ status: 'building' })
+        .update({
+          status: 'building',
+          github_repo_url: githubRepoUrl,
+        })
         .eq('id', deployment.id)
 
       // Create Vercel deployment
@@ -259,17 +315,21 @@ export async function POST(request: NextRequest) {
       // Also update project table
       await supabase
         .from('projects')
-        .update({ deployed_url: deployedUrl })
+        .update({
+          deployed_url: deployedUrl,
+          github_repo_url: githubRepoUrl,
+        })
         .eq('id', projectId)
 
       // ====================================================================
-      // 11. SUCCESS RESPONSE
+      // 12. SUCCESS RESPONSE
       // ====================================================================
       return NextResponse.json({
         success: true,
         deploymentId: deployment.id,
         url: deployedUrl,
         vercelUrl: readyDeployment.url,
+        githubUrl: githubRepoUrl,
         message: 'تم النشر بنجاح!'
       })
 

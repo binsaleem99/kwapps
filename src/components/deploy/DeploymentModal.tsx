@@ -18,7 +18,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { Loader2, CheckCircle, XCircle, ExternalLink, Copy } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, ExternalLink, Copy, Github } from 'lucide-react'
 
 type DeploymentStatus = 'idle' | 'deploying' | 'success' | 'error'
 
@@ -36,6 +36,7 @@ export function DeploymentModal({
   const [subdomain, setSubdomain] = useState('')
   const [status, setStatus] = useState<DeploymentStatus>('idle')
   const [deployedUrl, setDeployedUrl] = useState('')
+  const [githubUrl, setGithubUrl] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
 
   async function handleDeploy() {
@@ -80,6 +81,7 @@ export function DeploymentModal({
       }
 
       setDeployedUrl(data.url)
+      setGithubUrl(data.githubUrl || '')
       setStatus('success')
       toast.success('تم النشر بنجاح!')
 
@@ -168,7 +170,8 @@ export function DeploymentModal({
             </p>
             <div className="mt-6 space-y-2 text-xs text-gray-400">
               <p>⏳ تحويل الكود إلى HTML...</p>
-              <p>📦 إنشاء حزمة النشر...</p>
+              <p>📁 إنشاء مستودع GitHub...</p>
+              <p>📦 رفع الكود إلى GitHub...</p>
               <p>🚀 النشر على Vercel...</p>
             </div>
           </div>
@@ -183,30 +186,55 @@ export function DeploymentModal({
               تطبيقك الآن متاح على الإنترنت
             </p>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-              <p className="text-xs text-gray-500 mb-2">رابط التطبيق</p>
-              <p className="font-mono font-bold text-sm break-all mb-3 text-blue-600">
-                {deployedUrl}
-              </p>
+            <div className="space-y-4 mb-6">
+              {/* Deployed URL */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-xs text-gray-500 mb-2">رابط التطبيق</p>
+                <p className="font-mono font-bold text-sm break-all mb-3 text-blue-600">
+                  {deployedUrl}
+                </p>
 
-              <div className="flex gap-2 justify-center">
-                <Button
-                  onClick={handleOpenUrl}
-                  className="flex-1"
-                  size="sm"
-                >
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                  زيارة التطبيق
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleCopyUrl}
-                  size="sm"
-                >
-                  <Copy className="w-4 h-4 ml-2" />
-                  نسخ الرابط
-                </Button>
+                <div className="flex gap-2 justify-center">
+                  <Button
+                    onClick={handleOpenUrl}
+                    className="flex-1"
+                    size="sm"
+                  >
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    زيارة التطبيق
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleCopyUrl}
+                    size="sm"
+                  >
+                    <Copy className="w-4 h-4 ml-2" />
+                    نسخ الرابط
+                  </Button>
+                </div>
               </div>
+
+              {/* GitHub URL (if available) */}
+              {githubUrl && (
+                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Github className="w-4 h-4" />
+                    <p className="text-xs">مستودع GitHub</p>
+                  </div>
+                  <p className="font-mono text-sm break-all mb-3 text-gray-300">
+                    {githubUrl}
+                  </p>
+                  <Button
+                    onClick={() => window.open(githubUrl, '_blank', 'noopener,noreferrer')}
+                    variant="outline"
+                    size="sm"
+                    className="w-full bg-transparent border-gray-600 hover:bg-gray-800 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    عرض الكود على GitHub
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">

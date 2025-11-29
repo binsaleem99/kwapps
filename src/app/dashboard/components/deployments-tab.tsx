@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { ExternalLink, RefreshCw } from 'lucide-react'
+import { ExternalLink, RefreshCw, Github } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -25,6 +25,7 @@ interface Deployment {
   id: string
   subdomain: string
   deployed_url: string | null
+  github_repo_url: string | null
   status: 'pending' | 'building' | 'deploying' | 'ready' | 'failed'
   error_message: string | null
   deployed_at: string | null
@@ -52,6 +53,7 @@ export function DeploymentsTab() {
         id,
         subdomain,
         deployed_url,
+        github_repo_url,
         status,
         error_message,
         deployed_at,
@@ -246,17 +248,31 @@ export function DeploymentsTab() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {deployment.deployed_url && deployment.status === 'ready' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(deployment.deployed_url!, '_blank')}
-                            className="font-['Cairo']"
-                          >
-                            <ExternalLink className="w-4 h-4 ml-2" />
-                            زيارة
-                          </Button>
-                        )}
+                        <div className="flex gap-2">
+                          {deployment.deployed_url && deployment.status === 'ready' && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(deployment.deployed_url!, '_blank')}
+                              className="font-['Cairo']"
+                              title="زيارة التطبيق"
+                            >
+                              <ExternalLink className="w-4 h-4 ml-2" />
+                              زيارة
+                            </Button>
+                          )}
+                          {deployment.github_repo_url && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => window.open(deployment.github_repo_url!, '_blank')}
+                              className="font-['Cairo']"
+                              title="عرض الكود على GitHub"
+                            >
+                              <Github className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
