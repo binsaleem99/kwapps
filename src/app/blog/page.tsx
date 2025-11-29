@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Eye, ArrowRight } from 'lucide-react'
+import { Calendar, Eye, ArrowRight, ArrowLeft } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'المدونة | KW APPS',
