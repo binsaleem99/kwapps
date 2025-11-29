@@ -313,6 +313,10 @@ export async function POST(request: NextRequest) {
     // Calculate cost
     const cost = calculateCost(totalTokens)
 
+    // Calculate usage statistics for frontend
+    const newTodayCount = todayCount + 1
+    const remainingGenerations = Math.max(0, limits.daily - newTodayCount)
+
     // Return successful response
     return NextResponse.json(
       {
@@ -322,6 +326,11 @@ export async function POST(request: NextRequest) {
         englishPrompt,
         tokensUsed: totalTokens,
         cost,
+        usage: {
+          current: newTodayCount,
+          limit: limits.daily,
+          remaining: remainingGenerations,
+        },
         issues: issues.length > 0 ? issues : undefined,
       } as GenerateResponse,
       { status: 200 }

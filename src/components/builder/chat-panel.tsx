@@ -111,11 +111,22 @@ export default function ChatPanel({ projectId, onCodeGenerated, currentCode }: C
         }),
       })
 
-      const data = await response.json()
-
+      // Check response status BEFORE parsing
       if (!response.ok) {
-        throw new Error(data.error || 'فشل إنشاء الكود')
+        let errorMessage = 'فشل إنشاء الكود'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // Response wasn't JSON, try reading as text
+          const errorText = await response.text()
+          errorMessage = errorText || errorMessage
+        }
+        throw new Error(errorMessage)
       }
+
+      // Only parse JSON if response was successful
+      const data = await response.json()
 
       // Add assistant message
       const assistantMessage: Message = {
@@ -127,8 +138,10 @@ export default function ChatPanel({ projectId, onCodeGenerated, currentCode }: C
       }
       setMessages(prev => [...prev, assistantMessage])
 
-      // Update usage
-      setUsage(data.usage)
+      // Update usage (now expects correct structure)
+      if (data.usage) {
+        setUsage(data.usage)
+      }
 
       // Notify parent component with generated code
       onCodeGenerated(data.code)
