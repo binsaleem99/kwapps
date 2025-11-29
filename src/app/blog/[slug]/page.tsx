@@ -173,7 +173,19 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 }
 
 export async function generateStaticParams() {
-  const supabase = await createClient()
+  // Use direct Supabase client for static generation (no cookies needed)
+  const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+
+  const supabase = createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    }
+  )
 
   const { data: posts } = await supabase
     .from('blog_posts')

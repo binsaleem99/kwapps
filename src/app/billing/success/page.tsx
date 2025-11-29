@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function BillingSuccessPage() {
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
+function BillingSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('order_id')
@@ -113,5 +116,17 @@ export default function BillingSuccessPage() {
         </p>
       </Card>
     </div>
+  )
+}
+
+export default function BillingSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+      </div>
+    }>
+      <BillingSuccessContent />
+    </Suspense>
   )
 }
