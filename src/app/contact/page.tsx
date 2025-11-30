@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Mail, MessageSquare, Phone } from 'lucide-react'
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic'
+
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
