@@ -36,7 +36,8 @@
   --radius: 0.5rem;
 
   /* KW APPS Brand Colors - Master UI Prompt Compliant */
-  /* PRIMARY: Slate-900 (Dark, Professional) */
+  /* PRIMARY: Slate (Dark, Professional) - EXTENDED for bold redesign */
+  --slate-950: 2 6 23;        /* #020617 - DEEPEST (NEW) */
   --slate-900: 15 23 42;      /* #0F172A */
   --slate-800: 30 41 59;      /* #1E293B */
   --slate-700: 51 65 85;      /* #334155 */
@@ -48,14 +49,21 @@
   --slate-100: 241 245 249;   /* #F1F5F9 */
   --slate-50: 248 250 252;    /* #F8FAFC */
 
-  /* ACCENT: Blue-500 (Modern, Trustworthy) */
-  --blue-500: 59 130 246;     /* #3B82F6 */
-  --blue-600: 37 99 235;      /* #2563EB */
+  /* ACCENT: Blue (Modern, Trustworthy) - EXTENDED with electric tones */
   --blue-700: 29 78 216;      /* #1D4ED8 */
+  --blue-600: 37 99 235;      /* #2563EB */
+  --blue-500: 59 130 246;     /* #3B82F6 */
   --blue-400: 96 165 250;     /* #60A5FA */
   --blue-300: 147 197 253;    /* #93C5FD */
   --blue-100: 219 234 254;    /* #DBEAFE */
   --blue-50: 239 246 255;     /* #EFF6FF */
+
+  /* ELECTRIC BLUE - Vivid accent for bold design (NEW) */
+  --electric-blue: 0 112 243;  /* #0070F3 - High saturation */
+
+  /* CYAN VIVID - Secondary accent for gradients (NEW) */
+  --cyan-vivid: 6 182 212;     /* #06B6D4 - Cyan-500 vibrant */
+  --cyan-400: 34 211 238;      /* #22D3EE */
 
   /* Semantic Colors */
   --success-500: 34 197 94;   /* #22C55E - Green */
@@ -115,11 +123,74 @@
     background-attachment: fixed;
   }
 
+  /* EXTREME TYPOGRAPHY SCALE - Master UI Redesign */
+  /* Fighting AI slop: BOLD weights (800-900), TIGHT tracking, MASSIVE sizes */
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cairo', sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-weight: 900; /* Upgraded from 700 to 900 for BOLD impact */
+    letter-spacing: -0.03em; /* Tighter tracking for dramatic effect */
     color: rgb(15 23 42); /* slate-900 */
+    line-height: 0.9; /* Tight line-height for massive headlines */
+  }
+
+  /* Extreme Typography Classes - Direct use in components */
+  .text-10xl {
+    font-size: 10rem; /* 160px - HERO HEADLINES */
+    line-height: 0.9;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+  }
+
+  .text-9xl {
+    font-size: 8rem; /* 128px - SUB-HERO */
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: -0.025em;
+  }
+
+  .text-8xl {
+    font-size: 6rem; /* 96px - SECTION TITLES */
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  /* Bold Weight Utilities */
+  .font-black {
+    font-weight: 900;
+  }
+
+  .font-extrabold {
+    font-weight: 800;
+  }
+
+  /* Responsive scaling for extreme typography */
+  @media (max-width: 1024px) {
+    .text-10xl {
+      font-size: 6rem; /* 96px on tablets */
+    }
+    .text-9xl {
+      font-size: 5rem; /* 80px on tablets */
+    }
+    .text-8xl {
+      font-size: 4rem; /* 64px on tablets */
+    }
+  }
+
+  @media (max-width: 640px) {
+    .text-10xl {
+      font-size: 3.5rem; /* 56px on mobile */
+      line-height: 1;
+    }
+    .text-9xl {
+      font-size: 3rem; /* 48px on mobile */
+      line-height: 1;
+    }
+    .text-8xl {
+      font-size: 2.5rem; /* 40px on mobile */
+      line-height: 1.1;
+    }
   }
 
   /* RTL Support */
@@ -156,19 +227,49 @@
     color: rgb(59 130 246); /* blue-500 */
   }
 
-  /* Professional shadow */
+  /* ENHANCED SHADOW SYSTEM - Bold Redesign */
+  /* Fighting AI slop: DRAMATIC glows, not subtle shadows */
+
   .shadow-glow {
     box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
   }
 
-  /* Hover lift effect */
+  .shadow-glow-sm {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.12);
+  }
+
+  .shadow-glow-lg {
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.25);
+  }
+
+  .shadow-glow-xl {
+    box-shadow: 0 30px 60px rgba(59, 130, 246, 0.35);
+  }
+
+  .shadow-glow-2xl {
+    box-shadow: 0 40px 80px rgba(59, 130, 246, 0.4);
+  }
+
+  /* Electric blue glow for hero elements */
+  .shadow-electric {
+    box-shadow: 0 0 40px rgba(0, 112, 243, 0.5),
+                0 0 80px rgba(0, 112, 243, 0.3);
+  }
+
+  /* Cyan accent glow */
+  .shadow-cyan {
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.4),
+                0 0 60px rgba(6, 182, 212, 0.2);
+  }
+
+  /* Hover lift effect - ENHANCED */
   .hover-lift {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
   .hover-lift:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   }
 }
 
