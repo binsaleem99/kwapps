@@ -1,10 +1,9 @@
 'use client'
 
-import { Header } from '@/components/landing/Header'
-import { Footer } from '@/components/landing/Footer'
+import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Mail, MessageSquare, Phone } from 'lucide-react'
+import { Mail, MessageSquare, Phone, ArrowRight } from 'lucide-react'
 
 // Force dynamic rendering to prevent prerendering issues
 export const dynamic = 'force-dynamic'
@@ -12,7 +11,21 @@ export const dynamic = 'force-dynamic'
 export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      <Header />
+      {/* Simple Header without auth hooks */}
+      <header className="border-b bg-white" dir="rtl">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/" className="text-2xl font-bold text-blue-600">
+            KW APPS
+          </Link>
+          <Link href="/">
+            <Button variant="outline" size="sm">
+              <ArrowRight className="w-4 h-4 ml-2" />
+              العودة للرئيسية
+            </Button>
+          </Link>
+        </div>
+      </header>
+
       <main className="container mx-auto px-4 py-16" dir="rtl">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center mb-4 font-['Cairo']">
@@ -101,7 +114,13 @@ export default function ContactPage() {
           </Card>
         </div>
       </main>
-      <Footer />
+
+      {/* Simple Footer */}
+      <footer className="border-t bg-slate-900 text-white py-8 mt-16" dir="rtl">
+        <div className="container mx-auto px-4 text-center">
+          <p className="font-['Cairo']">© 2024 KW APPS - جميع الحقوق محفوظة</p>
+        </div>
+      </footer>
     </div>
   )
 }
