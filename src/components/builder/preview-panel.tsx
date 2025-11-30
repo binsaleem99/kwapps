@@ -16,16 +16,24 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
   const [iframeKey, setIframeKey] = useState(0)
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  console.log('[PreviewPanel] ===== RENDER =====')
+  console.log('[PreviewPanel] Received code prop length:', code?.length)
+  console.log('[PreviewPanel] isLoading:', isLoading)
+  console.log('[PreviewPanel] iframeKey:', iframeKey)
+
   // Update iframe when code changes
   useEffect(() => {
-    console.log('[PreviewPanel] useEffect triggered. Code length:', code?.length)
-    console.log('[PreviewPanel] iframeRef.current:', !!iframeRef.current)
+    console.log('[PreviewPanel] ========== useEffect TRIGGERED ==========')
+    console.log('[PreviewPanel] Code length:', code?.length)
+    console.log('[PreviewPanel] iframeRef.current exists:', !!iframeRef.current)
 
     if (code && iframeRef.current) {
-      console.log('[PreviewPanel] Updating iframe with new code')
+      console.log('[PreviewPanel] ✅ Both code and iframe exist - proceeding to update')
       const iframeDoc = iframeRef.current.contentDocument
+      console.log('[PreviewPanel] contentDocument exists:', !!iframeDoc)
       if (iframeDoc) {
-        console.log('[PreviewPanel] Writing to iframe document')
+        console.log('[PreviewPanel] ✅ Writing to iframe document...')
+        console.log('[PreviewPanel] Code preview (first 300 chars):', code.substring(0, 300))
         // Create complete HTML document with React
         const html = `
 <!DOCTYPE html>
@@ -129,18 +137,19 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
         iframeDoc.open()
         iframeDoc.write(html)
         iframeDoc.close()
-        console.log('[PreviewPanel] Iframe document updated successfully')
+        console.log('[PreviewPanel] ✅ ✅ ✅ Iframe document UPDATED SUCCESSFULLY ✅ ✅ ✅')
       } else {
-        console.warn('[PreviewPanel] Could not access iframe contentDocument')
+        console.error('[PreviewPanel] ❌ Could not access iframe contentDocument')
       }
     } else {
       if (!code) {
-        console.log('[PreviewPanel] No code to display')
+        console.warn('[PreviewPanel] ⚠️ No code to display')
       }
       if (!iframeRef.current) {
-        console.log('[PreviewPanel] iframeRef not ready')
+        console.warn('[PreviewPanel] ⚠️ iframeRef not ready yet')
       }
     }
+    console.log('[PreviewPanel] ========== useEffect COMPLETE ==========')
   }, [code, iframeKey])
 
   function handleReload() {

@@ -263,6 +263,11 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
                 totalTokens = event.data.tokens
                 accumulatedCode = event.data.code
 
+                console.log('[ChatPanel] ========== GENERATION COMPLETE ==========')
+                console.log('[ChatPanel] Total tokens:', totalTokens)
+                console.log('[ChatPanel] Accumulated code length:', accumulatedCode?.length)
+                console.log('[ChatPanel] Code preview:', accumulatedCode?.substring(0, 200))
+
                 // Add assistant message
                 const assistantMessage: Message = {
                   id: (Date.now() + 1).toString(),
@@ -274,7 +279,10 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
                 setMessages((prev) => [...prev, assistantMessage])
 
                 // Notify parent component
+                console.log('[ChatPanel] Calling onCodeGenerated callback...')
                 onCodeGenerated(accumulatedCode)
+                console.log('[ChatPanel] onCodeGenerated callback completed')
+                console.log('[ChatPanel] ==============================================')
 
                 // Refresh usage stats
                 await fetchUsage()

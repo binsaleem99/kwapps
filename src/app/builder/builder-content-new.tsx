@@ -32,6 +32,17 @@ export function BuilderPageContentNew() {
     }
   }, [projectIdParam, isLoaded, userId])
 
+  // Debug: Track when generatedCode changes
+  useEffect(() => {
+    console.log('[BuilderContent] ========== GENERATED CODE STATE CHANGED ==========')
+    console.log('[BuilderContent] generatedCode length:', generatedCode?.length)
+    console.log('[BuilderContent] generatedCode exists:', !!generatedCode)
+    if (generatedCode) {
+      console.log('[BuilderContent] First 200 chars:', generatedCode.substring(0, 200))
+    }
+    console.log('[BuilderContent] ===================================================')
+  }, [generatedCode])
+
   async function checkAuthAndLoadProject() {
     if (!userId) {
       router.push('/sign-in?redirect_url=/builder')
@@ -113,9 +124,14 @@ export function BuilderPageContentNew() {
   }
 
   function handleCodeGenerated(code: string) {
-    console.log('[BuilderContent] handleCodeGenerated called with code length:', code?.length)
+    console.log('[BuilderContent] ========== CODE GENERATED ==========')
+    console.log('[BuilderContent] Code length:', code?.length)
+    console.log('[BuilderContent] Code preview:', code?.substring(0, 200))
+    console.log('[BuilderContent] Previous generatedCode:', generatedCode?.substring(0, 50))
     setGeneratedCode(code)
     setHasUnsavedChanges(true)
+    console.log('[BuilderContent] State updated, new code set')
+    console.log('[BuilderContent] =====================================')
   }
 
   async function handleSave() {
