@@ -17,7 +17,7 @@ export default async function BillingPage() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login?redirectTo=/dashboard/billing')
+    redirect('/sign-in?redirectTo=/dashboard/billing')
   }
 
   // Get user's subscription

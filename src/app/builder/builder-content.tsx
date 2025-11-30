@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth } from '@/lib/hooks/use-auth'
 import { createClient } from '@/lib/supabase/client'
 import ChatPanel from '@/components/builder/chat-panel'
 import PreviewPanel from '@/components/builder/preview-panel'

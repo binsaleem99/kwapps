@@ -1,24 +1,23 @@
 'use client'
 
 import { useState } from 'react'
-import { useSignUp } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Sparkles, Mail, Lock, User, AlertCircle, Loader2, CheckCircle } from 'lucide-react'
+import { Sparkles, Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function SignUpPage() {
-  const { isLoaded, signUp, setActive } = useSignUp()
   const router = useRouter()
+  const supabase = createClient()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [verificationCode, setVerificationCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [pendingVerification, setPendingVerification] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(true)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,62 +28,42 @@ export default function SignUpPage() {
     setError('')
 
     try {
-      await signUp.create({
-        emailAddress: email,
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
         password,
-        firstName: name.split(' ')[0] || name,
-        lastName: name.split(' ').slice(1).join(' ') || '',
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          data: {
+            full_name: name,
+            display_name: name,
+          },
+        },
       })
 
-      // Send email verification code
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+      if (signUpError) throw signUpError
 
-      setPendingVerification(true)
+      // Show success message
+      alert('تم إرسال رسالة تأكيد إلى بريدك الإلكتروني')
+      router.push('/sign-in')
     } catch (err: any) {
       console.error('Sign up error:', err)
-      setError(err.errors?.[0]?.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVerification = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!isLoaded) return
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: verificationCode,
-      })
-
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-        router.push('/onboarding')
-      } else {
-        setError('حدث خطأ أثناء التحقق')
-      }
-    } catch (err: any) {
-      console.error('Verification error:', err)
-      setError(err.errors?.[0]?.message || 'رمز التحقق غير صحيح')
+      setError(err.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignUp = async () => {
-    if (!isLoaded) return
-
     setLoading(true)
     try {
-      await signUp.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/onboarding',
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       })
+
+      if (error) throw error
     } catch (err: any) {
       console.error('Google sign up error:', err)
       setError('فشل التسجيل بواسطة Google')
@@ -107,12 +86,10 @@ export default function SignUpPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2 font-['Cairo']">
-            {pendingVerification ? 'تحقق من بريدك الإلكتروني' : 'أنشئ حسابك'}
+            أنشئ حسابك
           </h1>
           <p className="text-slate-600 font-['Cairo']">
-            {pendingVerification
-              ? 'أدخل رمز التحقق المرسل إلى بريدك'
-              : 'ابدأ رحلتك مع KW APPS اليوم'}
+            ابدأ رحلتك مع KW APPS اليوم
           </p>
         </div>
 
@@ -125,9 +102,7 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {!pendingVerification ? (
-            <>
-              <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
                   <Label htmlFor="name" className="text-slate-900 font-bold mb-2 font-['Cairo']">
                     الاسم الكامل
@@ -262,64 +237,6 @@ export default function SignUpPage() {
                   </Link>
                 </p>
               </div>
-            </>
-          ) : (
-            <form onSubmit={handleVerification} className="space-y-5">
-              <div className="text-center mb-6">
-                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                  <Mail className="w-8 h-8 text-blue-600" />
-                </div>
-                <p className="text-sm text-slate-600 font-['Cairo']">
-                  تم إرسال رمز التحقق إلى
-                  <br />
-                  <span className="font-bold text-slate-900">{email}</span>
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="code" className="text-slate-900 font-bold mb-2 font-['Cairo']">
-                  رمز التحقق
-                </Label>
-                <div className="relative">
-                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input
-                    id="code"
-                    type="text"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                    placeholder="123456"
-                    required
-                    disabled={loading}
-                    className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl text-center text-2xl tracking-widest font-['Cairo']"
-                    maxLength={6}
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading || !isLoaded}
-                className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow hover:shadow-glow-lg hover:scale-105 transition-all duration-300 font-['Cairo']"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin ml-2" />
-                    جاري التحقق...
-                  </>
-                ) : (
-                  'تحقق وأكمل التسجيل'
-                )}
-              </Button>
-
-              <button
-                type="button"
-                onClick={() => setPendingVerification(false)}
-                className="w-full text-sm text-slate-600 hover:text-slate-900 font-bold font-['Cairo']"
-              >
-                ← العودة للتسجيل
-              </button>
-            </form>
-          )}
         </div>
 
         {/* Back to Home */}

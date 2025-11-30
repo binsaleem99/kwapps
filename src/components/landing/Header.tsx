@@ -4,12 +4,29 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useUser, UserButton, SignOutButton } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/use-auth";
+import { createClient } from "@/lib/supabase/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -105,14 +122,26 @@ export function Header() {
                 >
                   <Link href="/dashboard">لوحة التحكم</Link>
                 </Button>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-10 h-10 border-2 border-blue-500 shadow-glow",
-                    },
-                  }}
-                  afterSignOutUrl="/"
-                />
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger>
+                    <Avatar className="w-10 h-10 border-2 border-blue-500 shadow-glow cursor-pointer hover:scale-105 transition-transform">
+                      <AvatarImage src={user?.imageUrl} />
+                      <AvatarFallback className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold">
+                        {user?.fullName?.[0]?.toUpperCase() || user?.emailAddress?.[0]?.toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="cursor-pointer font-bold">
+                        لوحة التحكم
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer font-bold text-red-600 hover:text-red-700">
+                      تسجيل الخروج
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
@@ -208,16 +237,17 @@ export function Header() {
                         لوحة التحكم
                       </Link>
                     </Button>
-                    <SignOutButton>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="font-bold w-full hover:border-red-500"
-                      >
-                        تسجيل الخروج
-                      </Button>
-                    </SignOutButton>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        handleSignOut();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="font-bold w-full hover:border-red-500 text-red-600 hover:text-red-700"
+                    >
+                      تسجيل الخروج
+                    </Button>
                   </>
                 ) : (
                   <>

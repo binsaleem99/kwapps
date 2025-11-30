@@ -8,7 +8,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 
 // Configure route for streaming with extended timeout
 export const runtime = 'nodejs' // Use Node.js runtime for longer timeout
@@ -54,18 +53,22 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Check authentication with Clerk
-  const { userId } = await auth()
+  // Check authentication with Supabase
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!userId) {
+  if (!session) {
     return NextResponse.json(
       { error: 'Unauthorized', errorAr: 'غير مصرح' },
       { status: 401 }
     )
   }
 
+  const userId = session.user.id
+
   // Get user data with plan from database
-  const supabase = await createClient()
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
@@ -120,7 +123,8 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       try {
         // Get or create project
-        let projectId: string
+        let projectId: string = project_id || ''
+
         if (!project_id) {
           const { data: newProject, error: createError } = await supabase
             .from('projects')
@@ -148,8 +152,6 @@ export async function POST(request: NextRequest) {
             return
           }
           projectId = newProject.id
-        } else {
-          projectId = project_id as string
         }
 
         // Save user message
@@ -301,16 +303,19 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check usage limits
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
+    const supabase = await createClient()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (!userId) {
+    if (!session) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const supabase = await createClient()
+    const userId = session.user.id
     const { data: user } = await supabase
       .from('users')
       .select('plan')

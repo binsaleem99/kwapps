@@ -43,7 +43,7 @@ export default async function PricingPage() {
             <Link href="/blog" className="text-gray-600 hover:text-gray-900">
               المدونة
             </Link>
-            <Link href="/login">
+            <Link href="/sign-in">
               <Button variant="outline">تسجيل الدخول</Button>
             </Link>
             <Link href="/signup">

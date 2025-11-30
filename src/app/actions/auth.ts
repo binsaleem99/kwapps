@@ -1,32 +1,38 @@
 'use server'
 
 /**
- * Auth actions now use Clerk for authentication
+ * Auth actions using Supabase
  *
- * NOTE: Sign in/Sign up is handled by Clerk UI components (<SignIn>, <SignUp>)
- * This file now handles user sync to database and sign out
+ * NOTE: Sign in/Sign up is handled by custom forms with Supabase auth
+ * This file handles user sync to database and sign out
  */
 
-import { auth, clerkClient } from '@clerk/nextjs/server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 /**
- * Sync Clerk user to our database
- * Called automatically via Clerk webhook or manually after sign in
+ * Sync Supabase user to our database
+ * Called automatically after sign in/sign up to ensure user exists in users table
  */
 export async function syncUserToDatabase() {
-  const { userId } = await auth()
+  const supabase = await createClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-  if (!userId) {
+  if (!session) {
     return { error: 'Unauthorized' }
   }
 
   try {
-    const client = await clerkClient()
-    const user = await client.users.getUser(userId)
-    const supabase = await createClient()
+    const userId = session.user.id
+    const userEmail = session.user.email || ''
+    const userName =
+      session.user.user_metadata?.full_name ||
+      session.user.user_metadata?.display_name ||
+      userEmail.split('@')[0] ||
+      'User'
 
     // Check if user already exists in database
     const { data: existingUser } = await supabase
@@ -39,8 +45,8 @@ export async function syncUserToDatabase() {
       // Create new user record
       await supabase.from('users').insert({
         id: userId,
-        email: user.emailAddresses[0]?.emailAddress || '',
-        display_name: user.fullName || user.username || 'User',
+        email: userEmail,
+        display_name: userName,
         plan: 'free',
         onboarding_completed: false,
       })
@@ -54,10 +60,11 @@ export async function syncUserToDatabase() {
 }
 
 /**
- * Sign out - Clerk handles the actual sign out via <SignOutButton>
- * This is a fallback for programmatic sign out
+ * Sign out the current user
  */
 export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
   revalidatePath('/', 'layout')
   redirect('/sign-in')
 }

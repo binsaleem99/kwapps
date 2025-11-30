@@ -70,7 +70,7 @@ export default function UpdatePasswordPage() {
         setError('حدث خطأ أثناء تحديث كلمة المرور')
       } else {
         // Success - redirect to login
-        router.push('/login?message=password_updated')
+        router.push('/sign-in?message=password_updated')
       }
     } catch (err) {
       setError('حدث خطأ غير متوقع')

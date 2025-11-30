@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useSignIn } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,12 +10,13 @@ import { Label } from '@/components/ui/label'
 import { Sparkles, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function SignInPage() {
-  const { isLoaded, signIn, setActive } = useSignIn()
   const router = useRouter()
+  const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(true)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,35 +27,34 @@ export default function SignInPage() {
     setError('')
 
     try {
-      const result = await signIn.create({
-        identifier: email,
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
         password,
       })
 
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId })
-        router.push('/dashboard')
-      } else {
-        setError('حدث خطأ أثناء تسجيل الدخول')
-      }
+      if (signInError) throw signInError
+
+      router.push('/dashboard')
+      router.refresh()
     } catch (err: any) {
       console.error('Sign in error:', err)
-      setError(err.errors?.[0]?.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
+      setError(err.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleSignIn = async () => {
-    if (!isLoaded) return
-
     setLoading(true)
     try {
-      await signIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/dashboard',
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       })
+
+      if (error) throw error
     } catch (err: any) {
       console.error('Google sign in error:', err)
       setError('فشل تسجيل الدخول بواسطة Google')
