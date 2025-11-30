@@ -98,24 +98,35 @@ export class StreamingDeepSeekClient {
 
       const systemPrompt = `You are an expert React developer specializing in creating beautiful, Arabic-first UI components.
 
-You have access to these MIT-licensed component libraries:
-${COMPONENT_LIBRARY_SUMMARY}
-
-Available imports:
-${generateAllImports()}
-
 ${uiPrompt}
 
-CRITICAL INSTRUCTIONS:
-1. Generate a SINGLE React function component
-2. Name the component clearly (e.g., "App", "HomePage", "LandingPage", etc.)
-3. The component MUST be defined as either:
-   - function ComponentName() { ... }
-   - const ComponentName = () => { ... }
-4. Return ONLY the component code - NO imports, NO exports, NO markdown
-5. The component will be rendered directly in an iframe with React already loaded
+CRITICAL INSTRUCTIONS FOR react-live COMPATIBILITY:
 
-Generate production-ready React code following the Master UI Prompt guidelines above.`
+1. **NO IMPORT STATEMENTS** - React is already available in scope
+   ❌ WRONG: import React from 'react'
+   ❌ WRONG: import { useState } from 'react'
+   ✅ CORRECT: Just use React, useState, useEffect directly
+
+2. **NO EXPORT STATEMENTS** - Component will be auto-detected
+   ❌ WRONG: export default App
+   ❌ WRONG: export { App }
+   ✅ CORRECT: Just define the function
+
+3. **SINGLE FUNCTION COMPONENT** - One component only
+   ✅ CORRECT: function App() { return <div>...</div> }
+   ✅ CORRECT: const HomePage = () => { return <div>...</div> }
+
+4. **ALL CODE INLINE** - No separate components, all JSX in one function
+   ❌ WRONG: function Header() {...}  function App() { return <Header /> }
+   ✅ CORRECT: function App() { return <header>...</header> }
+
+5. **AVAILABLE IN SCOPE**: React, useState, useEffect, useRef, useCallback, useMemo
+
+6. **RENDERING**: Code will render in react-live preview (NOT iframe)
+
+7. **NO MARKDOWN** - Return pure JSX code only
+
+Generate production-ready React code following these rules strictly.`
 
       // Use Arabic prompt directly (DeepSeek supports Arabic natively)
       const userPrompt = `${prompt}
@@ -189,14 +200,29 @@ Name the component clearly and make it a standalone function or const.`
   }
 
   /**
-   * Cleans code output by removing markdown formatting
+   * Cleans code output by removing markdown formatting and incompatible statements
    */
   private cleanCodeOutput(code: string): string {
     // Remove markdown code blocks
     code = code.replace(/```tsx?\n?/g, '').replace(/```\n?/g, '')
 
+    // Remove import statements (react-live doesn't support them)
+    code = code.replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '')
+    code = code.replace(/^import\s+['"].*?['"];?\s*$/gm, '')
+
+    // Remove export statements (react-live doesn't support them)
+    code = code.replace(/^export\s+default\s+/gm, '')
+    code = code.replace(/^export\s+\{[^}]+\};?\s*$/gm, '')
+    code = code.replace(/^export\s+(const|function|class)/gm, '$1')
+
+    // Remove "use client" directive if present
+    code = code.replace(/^['"]use client['"];?\s*$/gm, '')
+
     // Remove leading/trailing whitespace
     code = code.trim()
+
+    console.log('[DeepSeek] Cleaned code length:', code.length)
+    console.log('[DeepSeek] First 200 chars:', code.substring(0, 200))
 
     return code
   }

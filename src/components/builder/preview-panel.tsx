@@ -190,7 +190,19 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
               maxHeight: '100%',
             }}
           >
-            <LiveProvider key={previewKey} code={code || ''} scope={{ React }}>
+            <LiveProvider
+              key={previewKey}
+              code={code || ''}
+              scope={{
+                React,
+                useState: React.useState,
+                useEffect: React.useEffect,
+                useRef: React.useRef,
+                useCallback: React.useCallback,
+                useMemo: React.useMemo,
+              }}
+              noInline={false}
+            >
               <div className="w-full h-full overflow-auto">
                 {/* Error Display */}
                 <LiveError className="bg-red-50 text-red-700 p-4 m-4 rounded-lg text-sm flex items-start gap-2" />
