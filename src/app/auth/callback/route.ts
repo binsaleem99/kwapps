@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next')
   const origin = requestUrl.origin
 
   if (code) {
@@ -11,7 +12,12 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // Check if this is a new user (Google OAuth signup)
+      // If there's a 'next' parameter (from password reset), use it
+      if (next) {
+        return NextResponse.redirect(`${origin}${next}`)
+      }
+
+      // Check if this is a new user (OAuth signup or email confirmation)
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')

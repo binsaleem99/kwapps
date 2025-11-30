@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isLoaded, setIsLoaded] = useState(true)
@@ -23,6 +24,17 @@ export default function SignUpPage() {
     e.preventDefault()
 
     if (!isLoaded) return
+
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      setError('كلمة المرور وتأكيد كلمة المرور غير متطابقتين')
+      return
+    }
+
+    if (password.length < 8) {
+      setError('يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل')
+      return
+    }
 
     setLoading(true)
     setError('')
@@ -117,7 +129,7 @@ export default function SignUpPage() {
                       placeholder="أحمد محمد"
                       required
                       disabled={loading}
-                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-['Cairo']"
+                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
                 </div>
@@ -133,10 +145,10 @@ export default function SignUpPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="your@email.com"
+                      placeholder="بريدك@example.com"
                       required
                       disabled={loading}
-                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-['Cairo']"
+                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
                 </div>
@@ -152,16 +164,36 @@ export default function SignUpPage() {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="8 أحرف على الأقل"
                       required
                       minLength={8}
                       disabled={loading}
-                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-['Cairo']"
+                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
                   <p className="mt-2 text-xs text-slate-500 font-['Cairo']">
                     يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل
                   </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="confirmPassword" className="text-slate-900 font-bold mb-2 font-['Cairo']">
+                    تأكيد كلمة المرور
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="أعد إدخال كلمة المرور"
+                      required
+                      minLength={8}
+                      disabled={loading}
+                      className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
+                    />
+                  </div>
                 </div>
 
                 <Button

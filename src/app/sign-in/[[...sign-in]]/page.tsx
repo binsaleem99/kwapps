@@ -105,10 +105,10 @@ export default function SignInPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
+                  placeholder="بريدك@example.com"
                   required
                   disabled={loading}
-                  className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-['Cairo']"
+                  className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                 />
               </div>
             </div>
@@ -124,10 +124,10 @@ export default function SignInPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="أدخل كلمة المرور"
                   required
                   disabled={loading}
-                  className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 rounded-xl font-['Cairo']"
+                  className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                 />
               </div>
             </div>

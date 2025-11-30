@@ -61,7 +61,7 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
                 <li>الاسم وعنوان البريد الإلكتروني</li>
                 <li>معلومات الحساب وكلمة المرور (مشفرة)</li>
-                <li>معلومات الدفع (يتم معالجتها بواسطة UPayments)</li>
+                <li>معلومات الدفع (يتم معالجتها بشكل آمن)</li>
                 <li>معلومات الاتصال (عند التواصل مع الدعم)</li>
               </ul>
 
@@ -87,10 +87,10 @@ export default function PrivacyPolicyPage() {
               <h2 className="text-2xl font-bold mb-4 mt-8">مشاركة البيانات</h2>
               <p className="mb-4 text-gray-700">نحن لا نبيع بياناتك الشخصية لأطراف ثالثة. نشارك البيانات فقط مع:</p>
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
-                <li><strong>UPayments:</strong> لمعالجة المدفوعات (K-Net وبطاقات الائتمان)</li>
-                <li><strong>DeepSeek AI:</strong> لمعالجة طلبات توليد الكود (بدون بيانات شخصية)</li>
-                <li><strong>Vercel:</strong> لاستضافة التطبيقات المنشورة</li>
-                <li><strong>Supabase:</strong> لتخزين البيانات والمصادقة</li>
+                <li><strong>مزودي خدمات الدفع:</strong> لمعالجة المدفوعات الإلكترونية بشكل آمن</li>
+                <li><strong>خدمات الذكاء الاصطناعي:</strong> لمعالجة طلبات توليد الكود (بدون بيانات شخصية)</li>
+                <li><strong>خدمات الاستضافة:</strong> لاستضافة وتشغيل التطبيقات المنشورة</li>
+                <li><strong>خدمات البنية التحتية:</strong> لتخزين البيانات والمصادقة بشكل آمن</li>
               </ul>
 
               <h2 className="text-2xl font-bold mb-4 mt-8">أمان البيانات</h2>
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
                 <li>Name and email address</li>
                 <li>Account information and password (encrypted)</li>
-                <li>Payment information (processed by UPayments)</li>
+                <li>Payment information (processed securely)</li>
                 <li>Contact information (when contacting support)</li>
               </ul>
 
@@ -185,10 +185,10 @@ export default function PrivacyPolicyPage() {
               <h2 className="text-2xl font-bold mb-4 mt-8">Data Sharing</h2>
               <p className="mb-4 text-gray-700">We do not sell your personal data to third parties. We share data only with:</p>
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
-                <li><strong>UPayments:</strong> For processing payments (K-Net and credit cards)</li>
-                <li><strong>DeepSeek AI:</strong> For processing code generation requests (no personal data)</li>
-                <li><strong>Vercel:</strong> For hosting published applications</li>
-                <li><strong>Supabase:</strong> For data storage and authentication</li>
+                <li><strong>Payment Processors:</strong> For secure electronic payment processing</li>
+                <li><strong>AI Services:</strong> For processing code generation requests (no personal data)</li>
+                <li><strong>Hosting Services:</strong> For hosting and running published applications</li>
+                <li><strong>Infrastructure Services:</strong> For secure data storage and authentication</li>
               </ul>
 
               <h2 className="text-2xl font-bold mb-4 mt-8">Data Security</h2>
