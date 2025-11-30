@@ -1,14 +1,10 @@
-import { Metadata } from 'next'
+'use client'
+
 import { Header } from '@/components/landing/Header'
 import { Footer } from '@/components/landing/Footer'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Mail, MessageSquare, Phone } from 'lucide-react'
-
-export const metadata: Metadata = {
-  title: 'اتصل بنا | KW APPS',
-  description: 'تواصل مع فريق KW APPS للدعم والمساعدة'
-}
 
 export default function ContactPage() {
   return (
