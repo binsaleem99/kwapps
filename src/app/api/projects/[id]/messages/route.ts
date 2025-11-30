@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
@@ -21,7 +21,7 @@ export async function GET(
       )
     }
 
-    const { id: projectId } = await params
+    const { id: projectId } = await context.params
 
     // Verify project belongs to user
     const { data: project, error: projectError } = await supabase
