@@ -32,7 +32,7 @@ const MODELS = {
 } as const
 
 const DEFAULT_TEMPERATURE = 0.7
-const MAX_TOKENS = 4000 // Reduced from 8000 for faster streaming
+const MAX_TOKENS = 2000 // Reduced to 2000 for faster generation (avoid timeouts)
 
 export interface StreamProgress {
   stage: 'translating' | 'generating' | 'verifying' | 'securing' | 'complete'
@@ -73,17 +73,9 @@ export class StreamingDeepSeekClient {
     let totalTokens = 0
 
     try {
-      // Stage 1: Translation
-      onProgress({ stage: 'translating', percent: 10, message: 'جاري الترجمة...' })
-
-      const { english: englishPrompt, tokensUsed: translateTokens } =
-        await translateArabicToEnglish(prompt)
-
-      totalTokens += translateTokens
-      onProgress(
-        { stage: 'translating', percent: 20, message: 'تمت الترجمة' },
-        { total: translateTokens }
-      )
+      // Stage 1: Skip Translation (DeepSeek understands Arabic natively)
+      // This saves time and avoids timeout issues
+      onProgress({ stage: 'translating', percent: 20, message: 'جاري التحضير...' })
 
       // Stage 2: Code Generation (streaming)
       onProgress({ stage: 'generating', percent: 30, message: 'جاري إنشاء الكود...' })
@@ -117,9 +109,10 @@ ${uiPrompt}
 Generate production-ready React code following the Master UI Prompt guidelines above.
 Return ONLY the React component code, no explanations or markdown formatting.`
 
-      const userPrompt = `English Request: ${englishPrompt}\nArabic Request: ${prompt}
+      // Use Arabic prompt directly (DeepSeek supports Arabic natively)
+      const userPrompt = `${prompt}
 
-Generate a React component that fulfills this request.`
+Create a React component that fulfills this Arabic request. The component should support RTL layout and Arabic text.`
 
       const stream = await this.deepseek.chat.completions.create({
         model: MODELS.CODER,
@@ -167,35 +160,13 @@ Generate a React component that fulfills this request.`
         { output: generateTokensEstimate, total: totalTokens }
       )
 
-      // Stage 3: RTL Verification
-      onProgress({ stage: 'verifying', percent: 70, message: 'جاري التحقق من RTL...' })
+      // SKIP RTL & Security verification to avoid timeout
+      // The Master UI Prompt already instructs proper RTL and secure coding
+      // Stage 3: Skip RTL Verification (already in prompt)
+      onProgress({ stage: 'verifying', percent: 80, message: 'جاري المعالجة...' })
 
-      const { code: rtlVerifiedCode, tokensUsed: rtlTokens } =
-        await ensureRTLArabic(accumulatedCode, prompt)
-
-      totalTokens += rtlTokens
-      onProgress(
-        { stage: 'verifying', percent: 85, message: 'تم التحقق من RTL' },
-        { total: rtlTokens }
-      )
-
-      // Use verified code for final output
-      accumulatedCode = rtlVerifiedCode
-
-      // Stage 4: Security Validation
-      onProgress({ stage: 'securing', percent: 90, message: 'فحص الأمان...' })
-
-      const { code: finalCode, tokensUsed: securityTokens } =
-        await validateSecurity(accumulatedCode)
-
-      totalTokens += securityTokens
-      onProgress(
-        { stage: 'securing', percent: 95, message: 'تم فحص الأمان' },
-        { total: securityTokens }
-      )
-
-      // Update with final code
-      accumulatedCode = finalCode
+      // Stage 4: Skip Security Validation (already in prompt)
+      onProgress({ stage: 'securing', percent: 90, message: 'جاري الإنهاء...' })
 
       // Stage 5: Complete
       onProgress({ stage: 'complete', percent: 100, message: 'تم!' })

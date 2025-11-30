@@ -8,6 +8,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+
+// Configure route for streaming with extended timeout
+export const runtime = 'nodejs' // Use Node.js runtime for longer timeout
+export const maxDuration = 60 // Maximum 60 seconds (requires Pro plan, falls back to 10s on Hobby)
 import { createClient } from '@/lib/supabase/server'
 import { StreamingDeepSeekClient } from '@/lib/deepseek/streaming-client'
 import { ConversationManager } from '@/lib/deepseek/conversation-manager'
