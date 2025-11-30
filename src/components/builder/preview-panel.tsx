@@ -18,9 +18,14 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
 
   // Update iframe when code changes
   useEffect(() => {
+    console.log('[PreviewPanel] useEffect triggered. Code length:', code?.length)
+    console.log('[PreviewPanel] iframeRef.current:', !!iframeRef.current)
+
     if (code && iframeRef.current) {
+      console.log('[PreviewPanel] Updating iframe with new code')
       const iframeDoc = iframeRef.current.contentDocument
       if (iframeDoc) {
+        console.log('[PreviewPanel] Writing to iframe document')
         // Create complete HTML document with React
         const html = `
 <!DOCTYPE html>
@@ -93,6 +98,16 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
         iframeDoc.open()
         iframeDoc.write(html)
         iframeDoc.close()
+        console.log('[PreviewPanel] Iframe document updated successfully')
+      } else {
+        console.warn('[PreviewPanel] Could not access iframe contentDocument')
+      }
+    } else {
+      if (!code) {
+        console.log('[PreviewPanel] No code to display')
+      }
+      if (!iframeRef.current) {
+        console.log('[PreviewPanel] iframeRef not ready')
       }
     }
   }, [code, iframeKey])

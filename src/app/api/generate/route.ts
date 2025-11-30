@@ -1,355 +1,299 @@
 /**
- * AI Code Generation API Route
+ * AI Code Generation API Route with Streaming Support
  *
  * POST /api/generate
  *
- * Handles Arabic-first AI code generation using DeepSeek.
- * Pipeline: Translate → Generate → Verify RTL → Validate Security → Save
+ * Handles Arabic-first AI code generation using DeepSeek with SSE streaming.
+ * Pipeline: Translate → Generate (streaming) → Verify RTL → Validate Security → Save
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { generateCompleteCode, calculateCost } from '@/lib/deepseek/client'
-import type { UserPlan, User, Project, Message } from '@/types'
-
-// Plan limits for AI generation
-const PLAN_LIMITS: Record<
-  UserPlan,
-  { daily: number; monthly: number; name: string }
-> = {
-  free: { daily: 3, monthly: 10, name: 'Free' },
-  builder: { daily: 50, monthly: 500, name: 'Builder' },
-  pro: { daily: 200, monthly: 2000, name: 'Pro' },
-  hosting_only: { daily: 0, monthly: 0, name: 'Hosting Only' },
-}
+import { StreamingDeepSeekClient } from '@/lib/deepseek/streaming-client'
+import { ConversationManager } from '@/lib/deepseek/conversation-manager'
+import { TokenTracker, PLAN_LIMITS } from '@/lib/deepseek/token-tracker'
+import type { UserPlan, User, Project } from '@/types'
 
 // Request body interface
 interface GenerateRequest {
   prompt: string // Arabic prompt
-  projectId?: string // Optional: attach to existing project
-  projectName?: string // Optional: name for new project
+  project_id?: string // Project ID for context
+  current_code?: string // Current code for context
 }
 
-// Response interface
-interface GenerateResponse {
-  success: boolean
-  code?: string
-  projectId?: string
-  englishPrompt?: string
-  tokensUsed?: number
-  cost?: number
-  issues?: string[]
-  vulnerabilities?: string[]
-  error?: string
-  errorAr?: string
+// SSE Event Types
+type SSEEvent =
+  | { type: 'progress'; data: { stage: string; percent: number; message: string } }
+  | { type: 'tokens'; data: { input?: number; output?: number; total?: number } }
+  | { type: 'code_chunk'; data: string }
+  | { type: 'complete'; data: { code: string; tokens: number; projectId: string } }
+  | { type: 'error'; data: { message: string; messageAr: string } }
+
+/**
+ * Helper function to send SSE events
+ */
+function sendSSE(event: SSEEvent): string {
+  return `data: ${JSON.stringify(event)}\n\n`
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    // Parse request body
-    const body: GenerateRequest = await request.json()
-    const { prompt, projectId, projectName } = body
+  // Parse request body
+  const body: GenerateRequest = await request.json()
+  const { prompt, project_id } = body
 
-    // Validate prompt
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Prompt is required',
-          errorAr: 'الوصف مطلوب',
-        } as GenerateResponse,
-        { status: 400 }
-      )
-    }
-
-    // Check authentication
-    const supabase = await createClient()
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !authUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Unauthorized',
-          errorAr: 'غير مصرح',
-        } as GenerateResponse,
-        { status: 401 }
-      )
-    }
-
-    // Get user data with plan
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authUser.id)
-      .single<User>()
-
-    if (userError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'User not found',
-          errorAr: 'المستخدم غير موجود',
-        } as GenerateResponse,
-        { status: 404 }
-      )
-    }
-
-    // Check plan limits
-    const limits = PLAN_LIMITS[user.plan]
-    if (limits.daily === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Plan "${limits.name}" does not include AI generation`,
-          errorAr: `خطة "${limits.name}" لا تتضمن إنشاء الذكاء الاصطناعي`,
-        } as GenerateResponse,
-        { status: 403 }
-      )
-    }
-
-    // Check usage limits
-    const today = new Date().toISOString().split('T')[0]
-    const startOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
+  // Validate prompt
+  if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+    return NextResponse.json(
+      { error: 'Prompt is required', errorAr: 'الوصف مطلوب' },
+      { status: 400 }
     )
-      .toISOString()
-      .split('T')[0]
+  }
 
-    // Get today's usage
-    const { data: todayUsage } = await supabase
-      .from('usage_limits')
-      .select('prompt_count, tokens_used')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .single()
+  // Check authentication
+  const supabase = await createClient()
+  const {
+    data: { user: authUser },
+    error: authError,
+  } = await supabase.auth.getUser()
 
-    const todayCount = todayUsage?.prompt_count || 0
-    if (todayCount >= limits.daily) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Daily limit reached (${limits.daily} generations per day)`,
-          errorAr: `تم الوصول إلى الحد اليومي (${limits.daily} إنشاء في اليوم)`,
-        } as GenerateResponse,
-        { status: 429 }
-      )
-    }
+  if (authError || !authUser) {
+    return NextResponse.json(
+      { error: 'Unauthorized', errorAr: 'غير مصرح' },
+      { status: 401 }
+    )
+  }
 
-    // Get month's usage
-    const { data: monthUsage } = await supabase
-      .from('usage_limits')
-      .select('prompt_count')
-      .eq('user_id', user.id)
-      .gte('date', startOfMonth)
+  // Get user data with plan
+  const { data: user, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', authUser.id)
+    .single<User>()
 
-    const monthCount =
-      monthUsage?.reduce((sum, record) => sum + record.prompt_count, 0) || 0
-    if (monthCount >= limits.monthly) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Monthly limit reached (${limits.monthly} generations per month)`,
-          errorAr: `تم الوصول إلى الحد الشهري (${limits.monthly} إنشاء في الشهر)`,
-        } as GenerateResponse,
-        { status: 429 }
-      )
-    }
+  if (userError || !user) {
+    return NextResponse.json(
+      { error: 'User not found', errorAr: 'المستخدم غير موجود' },
+      { status: 404 }
+    )
+  }
 
-    // Check if DeepSeek API key is configured
-    if (!process.env.DEEPSEEK_API_KEY) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'AI service not configured',
-          errorAr: 'خدمة الذكاء الاصطناعي غير مهيأة',
-        } as GenerateResponse,
-        { status: 500 }
-      )
-    }
-
-    // Generate code using DeepSeek
-    let generationResult
-    try {
-      // All user-generated apps use 'client_app' type (master-ui-deepseek-client.md)
-      // Internal platform UI would use 'internal_ui' (master-ui-website.md)
-      generationResult = await generateCompleteCode(prompt, {
-        generationType: 'client_app',
-      })
-    } catch (error) {
-      console.error('Generation error:', error)
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Code generation failed',
-          errorAr: 'فشل إنشاء الكود',
-        } as GenerateResponse,
-        { status: 500 }
-      )
-    }
-
-    const {
-      code,
-      englishPrompt,
-      totalTokens,
-      issues,
-      vulnerabilities,
-    } = generationResult
-
-    // Check for security vulnerabilities
-    if (vulnerabilities && vulnerabilities.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Security issues found: ${vulnerabilities.join(', ')}`,
-          errorAr: `تم العثور على مشاكل أمنية: ${vulnerabilities.join('، ')}`,
-          vulnerabilities,
-        } as GenerateResponse,
-        { status: 400 }
-      )
-    }
-
-    // Get or create project
-    let project: Project
-    if (projectId) {
-      // Update existing project
-      const { data: existingProject, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .eq('user_id', user.id)
-        .single<Project>()
-
-      if (projectError || !existingProject) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Project not found',
-            errorAr: 'المشروع غير موجود',
-          } as GenerateResponse,
-          { status: 404 }
-        )
-      }
-
-      const { data: updatedProject, error: updateError } = await supabase
-        .from('projects')
-        .update({
-          arabic_prompt: prompt,
-          english_prompt: englishPrompt,
-          generated_code: code,
-          status: 'preview',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', projectId)
-        .select()
-        .single<Project>()
-
-      if (updateError || !updatedProject) {
-        throw new Error('Failed to update project')
-      }
-
-      project = updatedProject
-    } else {
-      // Create new project
-      const { data: newProject, error: createError } = await supabase
-        .from('projects')
-        .insert({
-          user_id: user.id,
-          name: projectName || `مشروع ${new Date().toLocaleDateString('ar-KW')}`,
-          arabic_prompt: prompt,
-          english_prompt: englishPrompt,
-          generated_code: code,
-          status: 'preview',
-        })
-        .select()
-        .single<Project>()
-
-      if (createError || !newProject) {
-        throw new Error('Failed to create project')
-      }
-
-      project = newProject
-    }
-
-    // Save messages (user prompt and assistant response)
-    const messages: Partial<Message>[] = [
-      {
-        project_id: project.id,
-        role: 'user',
-        content: prompt,
-        tokens_used: 0,
-      },
-      {
-        project_id: project.id,
-        role: 'assistant',
-        content: code,
-        tokens_used: totalTokens,
-      },
-    ]
-
-    const { error: messagesError } = await supabase
-      .from('messages')
-      .insert(messages)
-
-    if (messagesError) {
-      console.error('Failed to save messages:', messagesError)
-      // Don't fail the request if messages fail to save
-    }
-
-    // Update usage limits
-    const { error: usageError } = await supabase.from('usage_limits').upsert({
-      user_id: user.id,
-      date: today,
-      prompt_count: todayCount + 1,
-      tokens_used: (todayUsage?.tokens_used || 0) + totalTokens,
-    })
-
-    if (usageError) {
-      console.error('Failed to update usage:', usageError)
-      // Don't fail the request if usage tracking fails
-    }
-
-    // Calculate cost
-    const cost = calculateCost(totalTokens)
-
-    // Calculate usage statistics for frontend
-    const newTodayCount = todayCount + 1
-    const remainingGenerations = Math.max(0, limits.daily - newTodayCount)
-
-    // Return successful response
+  // Check plan limits
+  const limits = PLAN_LIMITS[user.plan]
+  if (limits.daily === 0) {
     return NextResponse.json(
       {
-        success: true,
-        code,
-        projectId: project.id,
-        englishPrompt,
-        tokensUsed: totalTokens,
-        cost,
-        usage: {
-          current: newTodayCount,
-          limit: limits.daily,
-          remaining: remainingGenerations,
-        },
-        issues: issues.length > 0 ? issues : undefined,
-      } as GenerateResponse,
-      { status: 200 }
+        error: `Plan "${limits.name}" does not include AI generation`,
+        errorAr: `خطة "${limits.name}" لا تتضمن إنشاء الذكاء الاصطناعي`,
+      },
+      { status: 403 }
     )
-  } catch (error) {
-    console.error('API error:', error)
+  }
+
+  // Check if user can generate
+  const canGenerate = await TokenTracker.canGenerate(user.id)
+  if (!canGenerate) {
     return NextResponse.json(
       {
-        success: false,
-        error: 'Internal server error',
-        errorAr: 'خطأ في الخادم الداخلي',
-      } as GenerateResponse,
+        error: 'Daily or monthly limit reached',
+        errorAr: 'تم الوصول إلى الحد اليومي أو الشهري',
+      },
+      { status: 429 }
+    )
+  }
+
+  // Check if DeepSeek API key is configured
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return NextResponse.json(
+      {
+        error: 'AI service not configured',
+        errorAr: 'خدمة الذكاء الاصطناعي غير مهيأة',
+      },
       { status: 500 }
     )
   }
+
+  // Create readable stream for SSE
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        // Get or create project
+        let projectId: string
+        if (!project_id) {
+          const { data: newProject, error: createError } = await supabase
+            .from('projects')
+            .insert({
+              user_id: user.id,
+              name: `مشروع ${new Date().toLocaleDateString('ar-KW')}`,
+              status: 'generating',
+            })
+            .select('id')
+            .single()
+
+          if (createError || !newProject) {
+            controller.enqueue(
+              encoder.encode(
+                sendSSE({
+                  type: 'error',
+                  data: {
+                    message: 'Failed to create project',
+                    messageAr: 'فشل إنشاء المشروع',
+                  },
+                })
+              )
+            )
+            controller.close()
+            return
+          }
+          projectId = newProject.id
+        } else {
+          projectId = project_id
+        }
+
+        // Save user message
+        await ConversationManager.saveMessage(projectId, 'user', prompt, 0)
+
+        // Build contextual prompt
+        const { contextPrompt } = await ConversationManager.buildContextualPrompt(
+          projectId,
+          prompt
+        )
+
+        // Initialize streaming client
+        const streamingClient = new StreamingDeepSeekClient()
+
+        let accumulatedCode = ''
+        let totalTokens = 0
+
+        // Stream generation with progress updates
+        const generator = streamingClient.generateWithProgress(
+          contextPrompt,
+          projectId,
+          (progress, tokens) => {
+            // Send progress update
+            controller.enqueue(
+              encoder.encode(
+                sendSSE({
+                  type: 'progress',
+                  data: {
+                    stage: progress.stage,
+                    percent: progress.percent,
+                    message: progress.message,
+                  },
+                })
+              )
+            )
+
+            // Send token info if available
+            if (tokens) {
+              controller.enqueue(
+                encoder.encode(
+                  sendSSE({
+                    type: 'tokens',
+                    data: tokens,
+                  })
+                )
+              )
+            }
+          },
+          'client_app'
+        )
+
+        // Stream code chunks
+        let done = false
+        while (!done) {
+          const result = await generator.next()
+          if (result.done) {
+            // Get final result with totalTokens
+            if (result.value && typeof result.value === 'object' && 'totalTokens' in result.value) {
+              totalTokens = result.value.totalTokens
+            }
+            done = true
+          } else {
+            // Stream chunk
+            const chunk = result.value
+            accumulatedCode += chunk
+            controller.enqueue(
+              encoder.encode(
+                sendSSE({
+                  type: 'code_chunk',
+                  data: chunk,
+                })
+              )
+            )
+          }
+        }
+
+        // Save assistant message
+        await ConversationManager.saveMessage(
+          projectId,
+          'assistant',
+          accumulatedCode,
+          totalTokens
+        )
+
+        // Update project with generated code
+        await supabase
+          .from('projects')
+          .update({
+            generated_code: accumulatedCode,
+            status: 'preview',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', projectId)
+
+        // Track usage
+        await TokenTracker.trackUsage(user.id, totalTokens)
+
+        // Send completion event
+        console.log('[API] Sending complete event:', {
+          codeLength: accumulatedCode.length,
+          tokens: totalTokens,
+          projectId,
+          firstChars: accumulatedCode.substring(0, 100),
+        })
+
+        controller.enqueue(
+          encoder.encode(
+            sendSSE({
+              type: 'complete',
+              data: {
+                code: accumulatedCode,
+                tokens: totalTokens,
+                projectId,
+              },
+            })
+          )
+        )
+
+        console.log('[API] Stream closing')
+        controller.close()
+      } catch (error: any) {
+        console.error('Streaming generation error:', error)
+        controller.enqueue(
+          encoder.encode(
+            sendSSE({
+              type: 'error',
+              data: {
+                message: error.message || 'Generation failed',
+                messageAr: 'فشل إنشاء الكود',
+              },
+            })
+          )
+        )
+        controller.close()
+      }
+    },
+  })
+
+  // Return SSE response
+  return new NextResponse(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  })
 }
 
 // GET endpoint to check usage limits

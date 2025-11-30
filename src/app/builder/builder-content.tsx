@@ -110,7 +110,10 @@ export function BuilderPageContent() {
   }
 
   function handleCodeGenerated(code: string) {
+    console.log('[BuilderContent] handleCodeGenerated called with code length:', code?.length)
+    console.log('[BuilderContent] First 100 chars of code:', code?.substring(0, 100))
     setGeneratedCode(code)
+    console.log('[BuilderContent] generatedCode state updated')
   }
 
   if (isLoading) {
