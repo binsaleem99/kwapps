@@ -100,33 +100,49 @@ export class StreamingDeepSeekClient {
 
 ${uiPrompt}
 
-CRITICAL INSTRUCTIONS FOR react-live COMPATIBILITY:
+RESPONSE FORMAT:
+- Provide a brief explanation of what you're building (2-3 sentences in Arabic)
+- Then provide the code in a markdown code block with \`\`\`tsx
+- The code will be automatically extracted and rendered in a live preview
 
-1. **NO IMPORT STATEMENTS** - React is already available in scope
-   ❌ WRONG: import React from 'react'
-   ❌ WRONG: import { useState } from 'react'
-   ✅ CORRECT: Just use React, useState, useEffect directly
+CODE REQUIREMENTS:
+1. **Single Function Component** - Create ONE main component
+   ✅ function App() { return <div>...</div> }
+   ✅ const HomePage = () => { return <div>...</div> }
 
-2. **NO EXPORT STATEMENTS** - Component will be auto-detected
-   ❌ WRONG: export default App
-   ❌ WRONG: export { App }
-   ✅ CORRECT: Just define the function
+2. **No Imports Needed** - React and hooks are available globally
+   - Available: React, useState, useEffect, useRef, useCallback, useMemo
+   - Just use them directly without importing
 
-3. **SINGLE FUNCTION COMPONENT** - One component only
-   ✅ CORRECT: function App() { return <div>...</div> }
-   ✅ CORRECT: const HomePage = () => { return <div>...</div> }
+3. **RTL Support** - Always include dir="rtl" on root element
+   - Use Arabic text throughout
+   - Use Cairo font: font-['Cairo']
 
-4. **ALL CODE INLINE** - No separate components, all JSX in one function
-   ❌ WRONG: function Header() {...}  function App() { return <Header /> }
-   ✅ CORRECT: function App() { return <header>...</header> }
+4. **Inline Everything** - Keep all JSX in the main component
+   - Don't create separate components
+   - All markup should be in one function
 
-5. **AVAILABLE IN SCOPE**: React, useState, useEffect, useRef, useCallback, useMemo
+EXAMPLE RESPONSE:
+سأقوم بإنشاء صفحة رئيسية جميلة مع عنوان ترحيبي وأزرار تفاعلية.
 
-6. **RENDERING**: Code will render in react-live preview (NOT iframe)
+\`\`\`tsx
+function HomePage() {
+  const [count, setCount] = useState(0)
 
-7. **NO MARKDOWN** - Return pure JSX code only
+  return (
+    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-blue-50 to-white p-8">
+      <h1 className="text-4xl font-bold text-gray-900 font-['Cairo'] mb-4">
+        مرحباً بك
+      </h1>
+      <button onClick={() => setCount(count + 1)}>
+        النقرات: {count}
+      </button>
+    </div>
+  )
+}
+\`\`\`
 
-Generate production-ready React code following these rules strictly.`
+Generate production-ready, beautiful React components following these guidelines.`
 
       // Use Arabic prompt directly (DeepSeek supports Arabic natively)
       const userPrompt = `${prompt}
@@ -169,8 +185,8 @@ Name the component clearly and make it a standalone function or const.`
         yield content
       }
 
-      // Clean accumulated code
-      accumulatedCode = this.cleanCodeOutput(accumulatedCode)
+      // Extract code from markdown response (Lovable pattern)
+      accumulatedCode = this.extractCodeFromMarkdown(accumulatedCode)
 
       // Estimate tokens for the generation (will be refined by actual usage later)
       const generateTokensEstimate = streamTokensEstimate
@@ -200,12 +216,36 @@ Name the component clearly and make it a standalone function or const.`
   }
 
   /**
-   * Cleans code output by removing markdown formatting and incompatible statements
+   * Extracts code blocks from markdown response (Lovable pattern)
+   * Works with any AI output format - natural and reliable
    */
-  private cleanCodeOutput(code: string): string {
-    // Remove markdown code blocks
-    code = code.replace(/```tsx?\n?/g, '').replace(/```\n?/g, '')
+  private extractCodeFromMarkdown(response: string): string {
+    console.log('[DeepSeek] Extracting code from response, length:', response.length)
 
+    // Try to extract code blocks from markdown (```tsx or ```jsx or ```typescript or ```javascript)
+    const codeBlockRegex = /```(?:tsx?|jsx?|typescript|javascript)?\s*\n([\s\S]*?)```/g
+    const matches = []
+    let match
+
+    while ((match = codeBlockRegex.exec(response)) !== null) {
+      matches.push(match[1].trim())
+    }
+
+    if (matches.length > 0) {
+      console.log('[DeepSeek] ✅ Found', matches.length, 'code block(s) in markdown')
+      console.log('[DeepSeek] Using first code block, length:', matches[0].length)
+      return this.cleanExtractedCode(matches[0])
+    }
+
+    // If no markdown code blocks found, assume entire response is code
+    console.log('[DeepSeek] ⚠️ No markdown code blocks found, using full response as code')
+    return this.cleanExtractedCode(response)
+  }
+
+  /**
+   * Cleans extracted code by removing incompatible statements for react-live
+   */
+  private cleanExtractedCode(code: string): string {
     // Remove import statements (react-live doesn't support them)
     code = code.replace(/^import\s+.*?from\s+['"].*?['"];?\s*$/gm, '')
     code = code.replace(/^import\s+['"].*?['"];?\s*$/gm, '')
