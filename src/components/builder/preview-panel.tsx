@@ -21,21 +21,57 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
   console.log('[PreviewPanel] isLoading:', isLoading)
   console.log('[PreviewPanel] iframeKey:', iframeKey)
 
-  // Update iframe when code changes
+  // Update iframe content when code or iframe changes
   useEffect(() => {
     console.log('[PreviewPanel] ========== useEffect TRIGGERED ==========')
     console.log('[PreviewPanel] Code length:', code?.length)
     console.log('[PreviewPanel] iframeRef.current exists:', !!iframeRef.current)
 
-    if (code && iframeRef.current) {
-      console.log('[PreviewPanel] ✅ Both code and iframe exist - proceeding to update')
-      const iframeDoc = iframeRef.current.contentDocument
-      console.log('[PreviewPanel] contentDocument exists:', !!iframeDoc)
-      if (iframeDoc) {
-        console.log('[PreviewPanel] ✅ Writing to iframe document...')
-        console.log('[PreviewPanel] Code preview (first 300 chars):', code.substring(0, 300))
-        // Create complete HTML document with React
-        const html = `
+    // If no code, nothing to do
+    if (!code) {
+      console.warn('[PreviewPanel] ⚠️ No code to display')
+      console.log('[PreviewPanel] ========== useEffect COMPLETE ==========')
+      return
+    }
+
+    // If iframe not ready yet, set a timeout to retry
+    if (!iframeRef.current) {
+      console.warn('[PreviewPanel] ⚠️ iframeRef not ready yet, will retry in 100ms')
+      const retryTimer = setTimeout(() => {
+        console.log('[PreviewPanel] Retrying iframe update...')
+        // Force re-render by incrementing iframe key would cause infinite loop
+        // Instead, let's just try updating the iframe directly
+        if (iframeRef.current) {
+          updateIframeContent(iframeRef.current, code)
+        } else {
+          console.error('[PreviewPanel] ❌ Iframe still not ready after retry')
+        }
+      }, 100)
+      console.log('[PreviewPanel] ========== useEffect COMPLETE (retry scheduled) ==========')
+      return () => clearTimeout(retryTimer)
+    }
+
+    // Both code and iframe exist - update it
+    updateIframeContent(iframeRef.current, code)
+    console.log('[PreviewPanel] ========== useEffect COMPLETE ==========')
+  }, [code, iframeKey])
+
+  // Extracted iframe update logic for reusability
+  function updateIframeContent(iframe: HTMLIFrameElement, code: string) {
+    console.log('[PreviewPanel] ✅ Updating iframe content...')
+    const iframeDoc = iframe.contentDocument
+    console.log('[PreviewPanel] contentDocument exists:', !!iframeDoc)
+
+    if (!iframeDoc) {
+      console.error('[PreviewPanel] ❌ Could not access iframe contentDocument')
+      return
+    }
+
+    console.log('[PreviewPanel] ✅ Writing to iframe document...')
+    console.log('[PreviewPanel] Code preview (first 300 chars):', code.substring(0, 300))
+
+    // Create complete HTML document with React
+    const html = `
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -134,23 +170,11 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
 </body>
 </html>`
 
-        iframeDoc.open()
-        iframeDoc.write(html)
-        iframeDoc.close()
-        console.log('[PreviewPanel] ✅ ✅ ✅ Iframe document UPDATED SUCCESSFULLY ✅ ✅ ✅')
-      } else {
-        console.error('[PreviewPanel] ❌ Could not access iframe contentDocument')
-      }
-    } else {
-      if (!code) {
-        console.warn('[PreviewPanel] ⚠️ No code to display')
-      }
-      if (!iframeRef.current) {
-        console.warn('[PreviewPanel] ⚠️ iframeRef not ready yet')
-      }
-    }
-    console.log('[PreviewPanel] ========== useEffect COMPLETE ==========')
-  }, [code, iframeKey])
+    iframeDoc.open()
+    iframeDoc.write(html)
+    iframeDoc.close()
+    console.log('[PreviewPanel] ✅ ✅ ✅ Iframe document UPDATED SUCCESSFULLY ✅ ✅ ✅')
+  }
 
   function handleReload() {
     setIframeKey(prev => prev + 1)
