@@ -1,135 +1,63 @@
 'use server'
 
+/**
+ * Auth actions now use Clerk for authentication
+ *
+ * NOTE: Sign in/Sign up is handled by Clerk UI components (<SignIn>, <SignUp>)
+ * This file now handles user sync to database and sign out
+ */
+
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-export async function signUp(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  const displayName = formData.get('display_name') as string
+/**
+ * Sync Clerk user to our database
+ * Called automatically via Clerk webhook or manually after sign in
+ */
+export async function syncUserToDatabase() {
+  const { userId } = await auth()
 
-  const supabase = await createClient()
+  if (!userId) {
+    return { error: 'Unauthorized' }
+  }
 
-  // Sign up the user
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        display_name: displayName,
-      },
-    },
-  })
+  try {
+    const client = await clerkClient()
+    const user = await client.users.getUser(userId)
+    const supabase = await createClient()
 
-  if (error) {
+    // Check if user already exists in database
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (!existingUser) {
+      // Create new user record
+      await supabase.from('users').insert({
+        id: userId,
+        email: user.emailAddresses[0]?.emailAddress || '',
+        display_name: user.fullName || user.username || 'User',
+        plan: 'free',
+        onboarding_completed: false,
+      })
+    }
+
+    return { success: true }
+  } catch (error: any) {
+    console.error('Error syncing user to database:', error)
     return { error: error.message }
-  }
-
-  // If signup successful, create user profile
-  if (data.user) {
-    await supabase.from('users').insert({
-      id: data.user.id,
-      email: data.user.email!,
-      display_name: displayName,
-      plan: 'free',
-      onboarding_completed: false,
-    })
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
-}
-
-export async function signIn(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-
-  const supabase = await createClient()
-
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  // Check if user is admin to redirect accordingly
-  const { data: user } = await supabase
-    .from('users')
-    .select('is_admin, onboarding_completed')
-    .eq('id', data.user.id)
-    .single()
-
-  revalidatePath('/', 'layout')
-
-  // Redirect based on user type
-  if (user?.is_admin) {
-    redirect('/admin')
-  } else {
-    redirect('/dashboard')
   }
 }
 
-export async function signInWithGoogle() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
-    },
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  if (data.url) {
-    redirect(data.url)
-  }
-}
-
+/**
+ * Sign out - Clerk handles the actual sign out via <SignOutButton>
+ * This is a fallback for programmatic sign out
+ */
 export async function signOut() {
-  const supabase = await createClient()
-
-  await supabase.auth.signOut()
-
   revalidatePath('/', 'layout')
-  redirect('/login')
-}
-
-export async function resetPassword(formData: FormData) {
-  const email = formData.get('email') as string
-
-  const supabase = await createClient()
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  return { success: true, message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني' }
-}
-
-export async function updatePassword(formData: FormData) {
-  const password = formData.get('password') as string
-
-  const supabase = await createClient()
-
-  const { error } = await supabase.auth.updateUser({
-    password,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/sign-in')
 }

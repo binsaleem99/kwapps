@@ -4,17 +4,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { User } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const supabase = createClient();
+  const { user, isLoaded } = useUser();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,30 +18,6 @@ export function Header() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    // Check current session
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-
-    checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
-  };
 
   return (
     <header
@@ -123,7 +94,7 @@ export function Header() {
               إنشاء تطبيق
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
-            {loading ? (
+            {!isLoaded ? (
               <div className="w-32 h-10 bg-slate-200 animate-pulse rounded-xl" />
             ) : user ? (
               <>
@@ -134,32 +105,34 @@ export function Header() {
                 >
                   <Link href="/dashboard">لوحة التحكم</Link>
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="font-black border-2 border-slate-300 text-slate-900 hover:border-red-500 hover:bg-red-50 hover:scale-105 transition-all duration-200"
-                >
-                  تسجيل الخروج
-                </Button>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-10 h-10 border-2 border-blue-500 shadow-glow",
+                    },
+                  }}
+                  afterSignOutUrl="/"
+                />
               </>
             ) : (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="font-black border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105 transition-all duration-300"
-                  asChild
-                >
-                  <Link href="/login">تسجيل الدخول</Link>
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
-                  asChild
-                >
-                  <Link href="/signup">ابدأ مجاناً</Link>
-                </Button>
+                <SignInButton mode="redirect">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="font-black border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105 transition-all duration-300"
+                  >
+                    تسجيل الدخول
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="redirect">
+                  <Button
+                    size="sm"
+                    className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
+                  >
+                    ابدأ مجاناً
+                  </Button>
+                </SignUpButton>
               </>
             )}
           </nav>

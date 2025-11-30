@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
 
 // Configure route for streaming with extended timeout
 export const runtime = 'nodejs' // Use Node.js runtime for longer timeout
@@ -53,25 +54,22 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Check authentication
-  const supabase = await createClient()
-  const {
-    data: { user: authUser },
-    error: authError,
-  } = await supabase.auth.getUser()
+  // Check authentication with Clerk
+  const { userId } = await auth()
 
-  if (authError || !authUser) {
+  if (!userId) {
     return NextResponse.json(
       { error: 'Unauthorized', errorAr: 'غير مصرح' },
       { status: 401 }
     )
   }
 
-  // Get user data with plan
+  // Get user data with plan from database
+  const supabase = await createClient()
   const { data: user, error: userError } = await supabase
     .from('users')
     .select('*')
-    .eq('id', authUser.id)
+    .eq('id', userId)
     .single<User>()
 
   if (userError || !user) {
@@ -303,23 +301,20 @@ export async function POST(request: NextRequest) {
 // GET endpoint to check usage limits
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const { userId } = await auth()
 
-    if (authError || !authUser) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    const supabase = await createClient()
     const { data: user } = await supabase
       .from('users')
       .select('plan')
-      .eq('id', authUser.id)
+      .eq('id', userId)
       .single<{ plan: UserPlan }>()
 
     if (!user) {

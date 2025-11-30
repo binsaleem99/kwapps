@@ -30,13 +30,9 @@ export function BuilderPageContent() {
     try {
       const supabase = createClient()
 
-      // SECURITY: Use getUser() to validate with Auth server
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-      if (authError || !user) {
-        router.push('/login?redirectTo=/builder')
-        return
-      }
+      // SECURITY: Get user from Clerk (handled by middleware)
+      // If we're here, user is authenticated
+      // We just need to get the userId from the URL or create a new project
 
       // If project ID provided, load existing project
       if (projectIdParam) {
