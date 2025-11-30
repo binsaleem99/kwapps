@@ -229,7 +229,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Save assistant message
-        await ConversationManager.saveMessage(
+        const messageResult = await ConversationManager.saveMessage(
           projectId,
           'assistant',
           accumulatedCode,
@@ -245,6 +245,18 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', projectId)
+
+        // Save to generated_code table (Lovable pattern)
+        // This separates code from messages for better organization
+        await supabase
+          .from('generated_code')
+          .insert({
+            project_id: projectId,
+            user_id: userId,
+            code: accumulatedCode,
+            language: 'tsx',
+            message_id: messageResult?.id || null,
+          })
 
         // Track usage
         await TokenTracker.trackUsage(user.id, totalTokens)
