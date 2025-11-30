@@ -20,7 +20,6 @@ const plans = [
     cta: "ابدأ مجاناً",
     href: "/signup",
     highlighted: false,
-    gradient: "from-gray-50 to-gray-100",
   },
   {
     name: "منشئ",
@@ -38,7 +37,6 @@ const plans = [
     cta: "ابدأ الآن",
     href: "/signup?plan=builder",
     highlighted: true,
-    gradient: "from-blue-600 to-blue-500",
   },
   {
     name: "احترافي",
@@ -57,105 +55,118 @@ const plans = [
     cta: "ترقية",
     href: "/signup?plan=pro",
     highlighted: false,
-    gradient: "from-gray-50 to-gray-100",
   },
 ];
 
 export function Pricing() {
   return (
-    <section id="pricing" className="relative py-32 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/2 w-full h-full bg-gradient-to-b from-transparent via-transparent to-transparent" style={{ background: 'linear-gradient(180deg, rgba(59, 130, 246, 0.03) 0%, transparent 100%)' }} />
-        <div className="absolute bottom-0 right-1/2 w-full h-full bg-gradient-to-t from-transparent via-transparent to-transparent" style={{ background: 'linear-gradient(0deg, rgba(96, 165, 250, 0.03) 0%, transparent 100%)' }} />
-      </div>
+    <section id="pricing" className="relative py-40 overflow-hidden bg-gradient-to-b from-slate-50 to-white">
+      {/* Dramatic background gradients */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-cyan-500/5" />
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl" />
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Section Header */}
+        {/* Section Header - EXTREME TYPOGRAPHY */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-4xl mx-auto mb-24"
+          transition={{ duration: 1 }}
+          className="text-center max-w-4xl mx-auto mb-32"
         >
-          <div className="inline-block px-4 py-2 mb-6 rounded-full border" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
-            <span className="text-sm font-bold" style={{ color: '#3B82F6' }}>الأسعار</span>
+          <div className="inline-flex items-center gap-2 px-6 py-3 mb-8 rounded-full bg-blue-500/10 border-2 border-blue-500/20">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span className="text-sm font-black text-blue-600">الأسعار</span>
           </div>
-          <h2 className="text-6xl md:text-7xl font-black mb-6 leading-tight">
-            <span style={{ color: 'rgb(17, 24, 39)' }}>خطط واضحة</span>
-            <br />
-            <span className="text-gradient">أسعار عادلة</span>
+          <h2 className="text-8xl mb-8">
+            <span className="block text-slate-900">خطط واضحة</span>
+            <span className="block bg-gradient-to-l from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              أسعار عادلة
+            </span>
           </h2>
-          <p className="text-xl font-serif leading-relaxed" style={{ color: 'rgb(107, 114, 128)' }}>
+          <p className="text-2xl font-extrabold text-slate-600 leading-relaxed">
             ابدأ مجاناً وترقّى عندما تكون جاهزاً. بدون مفاجآت
           </p>
         </motion.div>
 
-        {/* Pricing Grid */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        {/* Pricing Grid - BOLD CARDS with dark highlighted plan */}
+        <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-20">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.nameEn}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
-              className={plan.highlighted ? "md:-mt-8" : ""}
+              transition={{ duration: 0.8, delay: index * 0.15 }}
+              className={`${plan.highlighted ? "md:-mt-8 md:mb-8" : ""}`}
             >
-              <div className={`relative h-full rounded-2xl overflow-hidden ${
-                plan.highlighted ? "ring-2 ring-blue-500/30 shadow-2xl" : ""
-              }`} style={plan.highlighted ? { boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.2)' } : {}}>
+              <div className={`relative h-full rounded-3xl overflow-hidden ${
+                plan.highlighted
+                  ? "bg-gradient-to-br from-slate-900 to-slate-800 shadow-glow-2xl border-2 border-blue-500"
+                  : "bg-white border-2 border-slate-200 shadow-lg hover:shadow-glow-xl"
+              } transition-all duration-500 hover:-translate-y-2`}>
                 {/* Popular badge */}
                 {plan.highlighted && (
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-primary text-center py-2">
+                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-500 text-center py-3 shadow-electric">
                     <span className="text-sm font-black text-white tracking-wide">
-                      الأكثر شعبية
+                      ⭐ الأكثر شعبية
                     </span>
                   </div>
                 )}
 
                 {/* Card content */}
-                <div className={`p-8 h-full flex flex-col bg-white border ${plan.highlighted ? "pt-14" : ""}`} style={{ borderColor: 'rgb(229, 231, 235)' }}>
+                <div className={`p-10 h-full flex flex-col ${plan.highlighted ? "pt-16" : ""}`}>
                   {/* Plan name */}
                   <div className="mb-8">
-                    <div className="text-sm font-bold mb-2" style={{ color: 'rgb(107, 114, 128)' }}>{plan.nameEn}</div>
-                    <h3 className="text-3xl font-black mb-2" style={{ color: 'rgb(17, 24, 39)' }}>{plan.name}</h3>
-                    <p className="text-sm font-serif" style={{ color: 'rgb(107, 114, 128)' }}>{plan.description}</p>
+                    <div className={`text-xs font-black mb-2 tracking-wider ${
+                      plan.highlighted ? "text-blue-400" : "text-slate-500"
+                    }`}>{plan.nameEn}</div>
+                    <h3 className={`text-4xl font-black mb-3 ${
+                      plan.highlighted ? "text-white" : "text-slate-900"
+                    }`}>{plan.name}</h3>
+                    <p className={`text-sm font-extrabold ${
+                      plan.highlighted ? "text-slate-400" : "text-slate-600"
+                    }`}>{plan.description}</p>
                   </div>
 
                   {/* Price */}
-                  <div className="mb-8">
+                  <div className="mb-10">
                     <div className="flex items-baseline gap-2">
-                      <span className={`text-6xl font-black ${
-                        plan.highlighted ? "text-gradient" : ""
-                      }`} style={!plan.highlighted ? { color: 'rgb(17, 24, 39)' } : {}}>
+                      <span className={`text-7xl font-black ${
+                        plan.highlighted
+                          ? "bg-gradient-to-l from-blue-400 to-cyan-400 bg-clip-text text-transparent"
+                          : "text-slate-900"
+                      }`}>
                         {plan.price}
                       </span>
                       {plan.price !== "0" && (
-                        <span className="text-2xl font-bold" style={{ color: 'rgb(107, 114, 128)' }}>د.ك</span>
+                        <span className={`text-3xl font-black ${
+                          plan.highlighted ? "text-slate-400" : "text-slate-600"
+                        }`}>د.ك</span>
                       )}
                     </div>
-                    <div className="mt-2" style={{ color: 'rgb(107, 114, 128)' }}>{plan.period}</div>
+                    <div className={`mt-2 font-extrabold ${
+                      plan.highlighted ? "text-slate-500" : "text-slate-600"
+                    }`}>{plan.period}</div>
                   </div>
 
                   {/* Features */}
-                  <ul className="space-y-4 flex-1 mb-8">
+                  <ul className="space-y-5 flex-1 mb-10">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
-                        <svg
-                          className="w-5 h-5 flex-shrink-0 mt-0.5"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                          style={{ color: '#2ECC71' }}
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <span className="font-medium" style={{ color: 'rgb(55, 65, 81)' }}>{feature}</span>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          plan.highlighted
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "bg-blue-500/10 text-blue-600"
+                        }`}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <span className={`font-extrabold ${
+                          plan.highlighted ? "text-slate-300" : "text-slate-700"
+                        }`}>{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -163,15 +174,11 @@ export function Pricing() {
                   {/* CTA Button */}
                   <Button
                     size="lg"
-                    className={`w-full text-lg font-black transition-all duration-300 ${
+                    className={`w-full text-lg font-black py-6 transition-all duration-300 ${
                       plan.highlighted
-                        ? "bg-gradient-primary text-white shadow-glow"
-                        : ""
+                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-glow-lg hover:shadow-electric hover:scale-105"
+                        : "bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105"
                     }`}
-                    style={!plan.highlighted
-                      ? { backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(17, 24, 39)' }
-                      : undefined
-                    }
                     asChild
                   >
                     <Link href={plan.href}>{plan.cta}</Link>
@@ -182,21 +189,24 @@ export function Pricing() {
           ))}
         </div>
 
-        {/* Hosting add-on */}
+        {/* Hosting add-on - ELECTRIC */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 text-center"
+          transition={{ duration: 1, delay: 0.5 }}
+          className="text-center"
         >
-          <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white border" style={{ borderColor: 'rgb(229, 231, 235)' }}>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: '#2ECC71' }}>
+          <div className="inline-flex items-center gap-4 px-10 py-6 rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 shadow-glow hover:shadow-glow-lg transition-all duration-500">
+            <svg className="w-8 h-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
             </svg>
-            <span style={{ color: 'rgb(55, 65, 81)' }}>
+            <span className="text-xl font-black text-slate-900">
               استضافة التطبيقات:{" "}
-              <span className="font-black text-gradient">5 د.ك/شهرياً</span> لكل تطبيق
+              <span className="bg-gradient-to-l from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                5 د.ك/شهرياً
+              </span>{" "}
+              لكل تطبيق
             </span>
           </div>
         </motion.div>

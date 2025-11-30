@@ -50,79 +50,86 @@ export function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 right-0 left-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-white/80 backdrop-blur-xl border-b border-slate-200"
-          : "bg-transparent"
+          ? "bg-white/90 backdrop-blur-2xl border-b-2 border-slate-200 shadow-glow-sm"
+          : "bg-white/60 backdrop-blur-xl"
       }`}
       dir="rtl"
     >
       <div className="container mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
-          {/* Logo */}
+          {/* Logo - BOLD with electric glow */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-primary rounded-lg blur-sm opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative px-3 py-2 bg-gradient-primary rounded-lg flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-white" />
+              {/* Electric glow on hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-electric-blue rounded-xl blur-md opacity-40 group-hover:opacity-100 group-hover:blur-lg transition-all duration-300" />
+              <div className="relative px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl flex items-center gap-2 shadow-glow group-hover:shadow-glow-lg group-hover:scale-105 transition-all duration-300">
+                <Sparkles className="w-5 h-5 text-white animate-pulse" />
                 <span className="text-xl font-black text-white">KW</span>
               </div>
             </div>
             <div>
-              <div className="text-xl font-black leading-none text-slate-900">
+              <div className="text-xl font-black leading-none text-slate-900 group-hover:text-blue-600 transition-colors">
                 KW APPS
               </div>
-              <div className="text-xs leading-none mt-0.5 text-slate-600">
+              <div className="text-xs leading-none mt-0.5 text-slate-600 font-extrabold">
                 كي دبليو آبس
               </div>
             </div>
           </Link>
 
-          {/* Navigation */}
+          {/* Navigation - BOLD hover states with scale */}
           <nav className="hidden md:flex items-center gap-6">
             <Link
               href="/"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               الرئيسية
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             <Link
               href="#features"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               المزايا
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             <Link
               href="/pricing"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               الأسعار
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             <Link
               href="/templates"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               القوالب
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             <Link
               href="/blog"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               المدونة
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             <Link
               href="/builder"
-              className="text-sm font-bold link-hover-blue"
+              className="text-sm font-extrabold text-slate-700 hover:text-blue-600 hover:scale-110 transition-all duration-200 relative group"
             >
               إنشاء تطبيق
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
             </Link>
             {loading ? (
-              <div className="w-32 h-10 bg-slate-200 animate-pulse rounded-lg" />
+              <div className="w-32 h-10 bg-slate-200 animate-pulse rounded-xl" />
             ) : user ? (
               <>
                 <Button
                   size="sm"
-                  className="bg-gradient-primary text-white font-bold shadow-glow hover:scale-105 transition-transform"
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow hover:shadow-glow-lg hover:scale-110 transition-all duration-300"
                   asChild
                 >
                   <Link href="/dashboard">لوحة التحكم</Link>
@@ -131,7 +138,7 @@ export function Header() {
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="font-bold border-slate-300 text-slate-900 hover:border-red-500"
+                  className="font-black border-2 border-slate-300 text-slate-900 hover:border-red-500 hover:bg-red-50 hover:scale-105 transition-all duration-200"
                 >
                   تسجيل الخروج
                 </Button>
@@ -141,14 +148,14 @@ export function Header() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="font-bold border-slate-300 text-slate-900 hover:border-blue-500"
+                  className="font-black border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105 transition-all duration-300"
                   asChild
                 >
                   <Link href="/login">تسجيل الدخول</Link>
                 </Button>
                 <Button
                   size="sm"
-                  className="bg-gradient-primary text-white font-bold shadow-glow hover:scale-105 transition-transform"
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
                   asChild
                 >
                   <Link href="/signup">ابدأ مجاناً</Link>
