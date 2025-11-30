@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
           }
           projectId = newProject.id
         } else {
-          projectId = project_id
+          projectId = project_id as string
         }
 
         // Save user message
