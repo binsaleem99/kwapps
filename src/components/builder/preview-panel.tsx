@@ -78,10 +78,41 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
 
     ${code}
 
-    // Render the default export
+    // Automatically detect and render the component
     const rootElement = document.getElementById('root');
     const root = ReactDOM.createRoot(rootElement);
-    root.render(<AppName />);
+
+    // Find the first function/component definition in the code
+    const componentMatch = \`${code}\`.match(/(?:function|const)\\s+(\\w+)\\s*(?:=|\\()/);
+    const ComponentName = componentMatch ? componentMatch[1] : 'App';
+
+    // Try to render the detected component
+    try {
+      const Component = eval(ComponentName);
+      root.render(<Component />);
+    } catch (e) {
+      // Fallback: try common export names
+      try {
+        if (typeof App !== 'undefined') {
+          root.render(<App />);
+        } else if (typeof HomePage !== 'undefined') {
+          root.render(<HomePage />);
+        } else if (typeof LandingPage !== 'undefined') {
+          root.render(<LandingPage />);
+        } else {
+          root.render(<div style={{padding: '2rem', textAlign: 'center', direction: 'rtl'}}>
+            <h1>خطأ في العرض</h1>
+            <p>تعذر العثور على المكون. يرجى التأكد من تصدير المكون بشكل صحيح.</p>
+          </div>);
+        }
+      } catch (fallbackError) {
+        console.error('Render error:', fallbackError);
+        root.render(<div style={{padding: '2rem', textAlign: 'center', direction: 'rtl'}}>
+          <h1>خطأ في العرض</h1>
+          <p>{fallbackError.toString()}</p>
+        </div>);
+      }
+    }
   </script>
 
   <script>

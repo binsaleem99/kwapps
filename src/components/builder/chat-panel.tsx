@@ -273,27 +273,33 @@ export default function ChatPanel({ projectId, onCodeGenerated, currentCode }: C
           </div>
         )}
 
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {messages.map((message) => {
+          // Don't show assistant messages that contain code (too long and clutters UI)
+          const isCodeMessage = message.role === 'assistant' && message.content.length > 500
+          const displayContent = isCodeMessage ? 'تم إنشاء التطبيق بنجاح! ✓' : message.content
+
+          return (
             <div
-              className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                message.role === 'user'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-900'
-              }`}
+              key={message.id}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm whitespace-pre-wrap font-['Cairo']">{message.content}</p>
-              {message.tokens_used && (
-                <p className="text-xs mt-1 opacity-70 font-['Cairo']">
-                  {message.tokens_used.toLocaleString()} رمز
-                </p>
-              )}
+              <div
+                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                  message.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-900'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap font-['Cairo']">{displayContent}</p>
+                {message.tokens_used && (
+                  <p className="text-xs mt-1 opacity-70 font-['Cairo']">
+                    {message.tokens_used.toLocaleString()} رمز
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         {isGenerating && (
           <div className="flex justify-start">

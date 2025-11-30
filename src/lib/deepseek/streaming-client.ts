@@ -106,13 +106,23 @@ ${generateAllImports()}
 
 ${uiPrompt}
 
-Generate production-ready React code following the Master UI Prompt guidelines above.
-Return ONLY the React component code, no explanations or markdown formatting.`
+CRITICAL INSTRUCTIONS:
+1. Generate a SINGLE React function component
+2. Name the component clearly (e.g., "App", "HomePage", "LandingPage", etc.)
+3. The component MUST be defined as either:
+   - function ComponentName() { ... }
+   - const ComponentName = () => { ... }
+4. Return ONLY the component code - NO imports, NO exports, NO markdown
+5. The component will be rendered directly in an iframe with React already loaded
+
+Generate production-ready React code following the Master UI Prompt guidelines above.`
 
       // Use Arabic prompt directly (DeepSeek supports Arabic natively)
       const userPrompt = `${prompt}
 
-Create a React component that fulfills this Arabic request. The component should support RTL layout and Arabic text.`
+Create a single React component that fulfills this Arabic request.
+The component should support RTL layout with dir="rtl" and use Arabic text.
+Name the component clearly and make it a standalone function or const.`
 
       const stream = await this.deepseek.chat.completions.create({
         model: MODELS.CODER,
