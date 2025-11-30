@@ -176,7 +176,11 @@ export async function POST(request: NextRequest) {
     // Generate code using DeepSeek
     let generationResult
     try {
-      generationResult = await generateCompleteCode(prompt)
+      // All user-generated apps use 'client_app' type (master-ui-deepseek-client.md)
+      // Internal platform UI would use 'internal_ui' (master-ui-website.md)
+      generationResult = await generateCompleteCode(prompt, {
+        generationType: 'client_app',
+      })
     } catch (error) {
       console.error('Generation error:', error)
       return NextResponse.json(

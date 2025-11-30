@@ -12,6 +12,8 @@
  */
 
 import OpenAI from 'openai'
+import fs from 'fs/promises'
+import path from 'path'
 import {
   MASTER_UI_PROMPT,
   getMasterUIPromptWithContext,
@@ -22,6 +24,34 @@ import {
   COMPONENT_LIBRARY_SUMMARY,
   generateAllImports,
 } from '@/lib/components/component-registry'
+
+// Generation type enum
+export type GenerationType = 'client_app' | 'internal_ui'
+
+/**
+ * Loads Master UI prompt from markdown file
+ * Falls back to TypeScript export if file not found
+ */
+async function loadUIPrompt(type: 'website' | 'client'): Promise<string> {
+  try {
+    const filename =
+      type === 'website'
+        ? 'master-ui-website.md'
+        : 'master-ui-deepseek-client.md'
+    const filepath = path.join(process.cwd(), 'prompts', filename)
+
+    // Try to read markdown file
+    const promptContent = await fs.readFile(filepath, 'utf-8')
+    return promptContent
+  } catch (error) {
+    // Fallback to TypeScript export if markdown file doesn't exist
+    console.warn(
+      `Master UI prompt markdown file not found, falling back to TypeScript export`,
+      error
+    )
+    return MASTER_UI_PROMPT
+  }
+}
 
 // Initialize OpenAI client with DeepSeek base URL
 const deepseek = new OpenAI({
@@ -98,10 +128,19 @@ Provide ONLY the English translation, no explanations or additional text.`,
 export async function generateReactCode(params: {
   englishPrompt: string
   arabicPrompt: string
+  generationType?: GenerationType
 }): Promise<{ code: string; tokensUsed: number }> {
-  const { englishPrompt, arabicPrompt } = params
+  const {
+    englishPrompt,
+    arabicPrompt,
+    generationType = 'client_app',
+  } = params
 
   try {
+    // Load appropriate UI prompt based on generation type
+    const uiPromptType = generationType === 'internal_ui' ? 'website' : 'client'
+    const uiPrompt = await loadUIPrompt(uiPromptType)
+
     const systemPrompt = `You are an expert React developer specializing in creating beautiful, Arabic-first UI components.
 
 You have access to these MIT-licensed component libraries:
@@ -110,12 +149,14 @@ ${COMPONENT_LIBRARY_SUMMARY}
 Available imports:
 ${generateAllImports()}
 
-Generate production-ready React code following the Master UI Prompt guidelines.
+${uiPrompt}
+
+Generate production-ready React code following the Master UI Prompt guidelines above.
 Return ONLY the React component code, no explanations or markdown formatting.`
 
-    const userPrompt = getMasterUIPromptWithContext(
-      `English: ${englishPrompt}\nArabic: ${arabicPrompt}`
-    )
+    const userPrompt = `English Request: ${englishPrompt}\nArabic Request: ${arabicPrompt}
+
+Generate a React component that fulfills this request.`
 
     const completion = await deepseek.chat.completions.create({
       model: MODELS.CODER,
@@ -356,13 +397,18 @@ function cleanCodeOutput(code: string): string {
  *
  * This is a convenience function that combines all steps.
  */
-export async function generateCompleteCode(arabicPrompt: string): Promise<{
+export async function generateCompleteCode(
+  arabicPrompt: string,
+  options?: { generationType?: GenerationType }
+): Promise<{
   code: string
   englishPrompt: string
   totalTokens: number
   issues: string[]
   vulnerabilities: string[]
 }> {
+  const generationType = options?.generationType || 'client_app'
+
   // Step 1: Translate
   const { english: englishPrompt, tokensUsed: translateTokens } =
     await translateArabicToEnglish(arabicPrompt)
@@ -372,6 +418,7 @@ export async function generateCompleteCode(arabicPrompt: string): Promise<{
     await generateReactCode({
       englishPrompt,
       arabicPrompt,
+      generationType,
     })
 
   // Step 3: Verify RTL and Arabic

@@ -1,0 +1,1367 @@
+
+╭─── Claude Code v2.0.55 ──────────────────────────────────────────────────────╮
+│                             │ Tips for getting started                       │
+│     Welcome back Ahmad!     │ Run /init to create a CLAUDE.md file with ins… │
+│                             │ Run /install-github-app to tag @claude right … │
+│          ▗ ▗   ▖ ▖          │ ────────────────────────────────────────────── │
+│                             │ Recent activity                                │
+│            ▘▘ ▝▝            │ No recent activity                             │
+│                             │                                                │
+│   Sonnet 4.5 · Claude Max   │                                                │
+│      ~/Desktop/kwapps       │                                                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+══════════════════ Conversation compacted · ctrl+o for history ═════════════════
+  ⎿  Referenced file ../../.claude/plans/giggly-rolling-barto.md
+  ⎿  Read src/app/api/projects/[id]/messages/route.ts (85 lines)
+  ⎿  Read src/app/api/generate/route.ts (430 lines)
+  ⎿  Read src/components/builder/chat-panel.tsx (261 lines)
+  ⎿  Read src/app/builder/builder-content.tsx (235 lines)
+
+⏺ I'll exit Plan Mode and present the comprehensive implementation plan for
+  your review.
+                                                                           
+⏺ User approved Claude's plan
+  ⎿  Plan saved to: ~/.claude/plans/giggly-rolling-barto.md · /plan to edit
+     KW APPS Multi-Agent Orchestration System - Implementation Plan
+
+     🎯 OVERVIEW
+
+     Goal: Build a production-ready multi-agent supervisor system 
+     (KWAPPS-CHIEF architecture) that transforms KW APPS from a simple code 
+     generator into an autonomous AI development platform with specialized 
+     agents collaborating like a real development team.
+
+     Approach: Full orchestration system with message-based communication, 
+     state management, database persistence, and real-time monitoring.
+
+     Timeline: 8-week phased implementation
+
+     Status: Planning Complete - Ready for Implementation
+
+     ---
+     🏗️ ARCHITECTURE OVERVIEW
+
+     Five Specialized Agents
+
+     1. KWAPPS-CHIEF (Supervisor)
+       - Coordinates all agents
+       - Plans and delegates tasks
+       - Makes strategic decisions
+       - Resolves conflicts
+       - Model: deepseek-chat (reasoning)
+     2. KWAPPS-DESIGN (UI/UX Specialist)
+       - Creates UI specifications
+       - Generates Arabic content
+       - Ensures Master UI Prompt compliance
+       - Defines design tokens
+       - Model: deepseek-chat (creative)
+     3. KWAPPS-DEV (Full-Stack Engineer)
+       - Implements features
+       - Writes React/Next.js code
+       - Creates database schemas
+       - Writes tests
+       - Model: deepseek-coder (code generation)
+     4. KWAPPS-OPS (DevOps Specialist)
+       - Manages deployments
+       - Handles Vercel/GitHub integrations
+       - Monitors performance
+       - Manages environments
+       - Model: deepseek-chat (operations)
+     5. KWAPPS-GUARD (QA & Security)
+       - Validates code quality
+       - Checks security vulnerabilities
+       - Ensures RTL/Arabic compliance
+       - Verifies brand guidelines
+       - Model: deepseek-chat (analysis)
+
+     Communication Architecture
+
+     Message Bus Pattern:
+     - Agents communicate via priority message queue
+     - Support for direct messages, broadcasts, and approvals
+     - Persistent message history for audit trails
+     - Real-time event streaming for monitoring
+
+     Message Types:
+     - TASK_DELEGATION: Chief assigns tasks to agents
+     - REQUEST_APPROVAL: Agent requests Chief's approval
+     - BROADCAST_UPDATE: Agent notifies all about changes
+     - DIRECT_MESSAGE: Agent-to-agent communication
+     - STATUS_UPDATE: Progress reporting
+     - ERROR_REPORT: Failure notifications
+
+     ---
+     📋 DATABASE SCHEMA
+
+     New Tables (Supabase Migration)
+
+     -- Agent Sessions
+     CREATE TABLE agent_sessions (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       user_id UUID REFERENCES users(id) NOT NULL,
+       project_id UUID REFERENCES projects(id),
+       session_type TEXT NOT NULL, -- 'feature', 'deployment', 'qa'
+       status TEXT NOT NULL, -- 'active', 'paused', 'completed', 'failed'
+       metadata JSONB DEFAULT '{}',
+       created_at TIMESTAMPTZ DEFAULT NOW(),
+       updated_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent Tasks
+     CREATE TABLE agent_tasks (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       session_id UUID REFERENCES agent_sessions(id) NOT NULL,
+       agent_type TEXT NOT NULL, -- 'chief', 'design', 'dev', 'ops', 'guard'
+       task_type TEXT NOT NULL, -- 'design_spec', 'code_implementation', 
+     'deployment', etc.
+       description TEXT NOT NULL,
+       status TEXT NOT NULL, -- 'pending', 'in_progress', 'completed', 
+     'failed', 'blocked'
+       priority INTEGER DEFAULT 0,
+       assigned_by UUID REFERENCES agent_tasks(id), -- Parent task
+       depends_on UUID[] DEFAULT '{}', -- Task dependencies
+       input_data JSONB DEFAULT '{}',
+       output_data JSONB DEFAULT '{}',
+       error_details TEXT,
+       started_at TIMESTAMPTZ,
+       completed_at TIMESTAMPTZ,
+       created_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent Messages
+     CREATE TABLE agent_messages (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       session_id UUID REFERENCES agent_sessions(id) NOT NULL,
+       from_agent TEXT NOT NULL,
+       to_agent TEXT, -- NULL for broadcasts
+       message_type TEXT NOT NULL,
+       content TEXT NOT NULL,
+       metadata JSONB DEFAULT '{}',
+       priority INTEGER DEFAULT 0,
+       read_at TIMESTAMPTZ,
+       created_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent Decisions
+     CREATE TABLE agent_decisions (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       session_id UUID REFERENCES agent_sessions(id) NOT NULL,
+       task_id UUID REFERENCES agent_tasks(id),
+       decision_type TEXT NOT NULL, -- 'architecture', 'design', 
+     'deployment', etc.
+       made_by TEXT NOT NULL, -- Agent type
+       decision TEXT NOT NULL,
+       reasoning TEXT NOT NULL,
+       alternatives_considered JSONB DEFAULT '[]',
+       approved_by TEXT, -- 'chief' or NULL
+       created_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent State Snapshots
+     CREATE TABLE agent_state_snapshots (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       session_id UUID REFERENCES agent_sessions(id) NOT NULL,
+       state_data JSONB NOT NULL,
+       snapshot_type TEXT NOT NULL, -- 'checkpoint', 'rollback', 'debug'
+       created_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent Metrics
+     CREATE TABLE agent_metrics (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       session_id UUID REFERENCES agent_sessions(id),
+       agent_type TEXT NOT NULL,
+       metric_type TEXT NOT NULL, -- 'tokens_used', 'task_duration', 
+     'error_rate', etc.
+       value NUMERIC NOT NULL,
+       metadata JSONB DEFAULT '{}',
+       recorded_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Agent Prompt Cache
+     CREATE TABLE agent_prompt_cache (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+       cache_key TEXT UNIQUE NOT NULL,
+       prompt_content TEXT NOT NULL,
+       expires_at TIMESTAMPTZ NOT NULL,
+       created_at TIMESTAMPTZ DEFAULT NOW()
+     );
+
+     -- Indexes for performance
+     CREATE INDEX idx_agent_sessions_user ON agent_sessions(user_id);
+     CREATE INDEX idx_agent_sessions_project ON agent_sessions(project_id);
+     CREATE INDEX idx_agent_tasks_session ON agent_tasks(session_id);
+     CREATE INDEX idx_agent_tasks_status ON agent_tasks(status);
+     CREATE INDEX idx_agent_messages_session ON agent_messages(session_id);
+     CREATE INDEX idx_agent_messages_unread ON agent_messages(to_agent, 
+     read_at) WHERE read_at IS NULL;
+     CREATE INDEX idx_agent_metrics_session ON agent_metrics(session_id);
+     CREATE INDEX idx_agent_metrics_type ON agent_metrics(agent_type, 
+     metric_type);
+
+     ---
+     📁 FILE STRUCTURE
+
+     src/
+     ├── lib/
+     │   ├── agents/
+     │   │   ├── core/
+     │   │   │   ├── base-agent.ts              # Abstract base class for 
+     all agents
+     │   │   │   ├── types.ts                   # TypeScript types for agent
+      system
+     │   │   │   └── constants.ts               # Agent constants and enums
+     │   │   │
+     │   │   ├── state/
+     │   │   │   ├── state-manager.ts           # CRUD for all agent state
+     │   │   │   ├── session-manager.ts         # Manage agent sessions
+     │   │   │   └── snapshot-manager.ts        # State snapshots for 
+     rollback
+     │   │   │
+     │   │   ├── communication/
+     │   │   │   ├── message-bus.ts             # Priority message queue
+     │   │   │   ├── event-emitter.ts           # Real-time events
+     │   │   │   └── message-handlers.ts        # Message processing logic
+     │   │   │
+     │   │   ├── prompts/
+     │   │   │   ├── prompt-manager.ts          # Dynamic prompt generation
+     │   │   │   ├── chief-prompt.ts            # CHIEF system prompt
+     │   │   │   ├── design-prompt.ts           # DESIGN system prompt
+     │   │   │   ├── dev-prompt.ts              # DEV system prompt
+     │   │   │   ├── ops-prompt.ts              # OPS system prompt
+     │   │   │   ├── guard-prompt.ts            # GUARD system prompt
+     │   │   │   └── context-builder.ts         # Build context from session
+      history
+     │   │   │
+     │   │   ├── agents/
+     │   │   │   ├── chief/
+     │   │   │   │   ├── chief-agent.ts         # CHIEF implementation
+     │   │   │   │   ├── task-planner.ts        # Break down user requests
+     │   │   │   │   ├── decision-engine.ts     # Make strategic decisions
+     │   │   │   │   └── conflict-resolver.ts   # Resolve agent conflicts
+     │   │   │   │
+     │   │   │   ├── design/
+     │   │   │   │   ├── design-agent.ts        # DESIGN implementation
+     │   │   │   │   ├── ui-spec-generator.ts   # Generate UI specs
+     │   │   │   │   ├── arabic-content.ts      # Create Arabic content
+     │   │   │   │   └── brand-validator.ts     # Validate Master UI 
+     compliance
+     │   │   │   │
+     │   │   │   ├── dev/
+     │   │   │   │   ├── dev-agent.ts           # DEV implementation
+     │   │   │   │   ├── code-generator.ts      # Generate React code
+     │   │   │   │   ├── test-generator.ts      # Create tests
+     │   │   │   │   └── integration.ts         # Integrate with existing 
+     DeepSeek
+     │   │   │   │
+     │   │   │   ├── ops/
+     │   │   │   │   ├── ops-agent.ts           # OPS implementation
+     │   │   │   │   ├── deployment.ts          # Handle deployments
+     │   │   │   │   └── monitoring.ts          # Monitor performance
+     │   │   │   │
+     │   │   │   └── guard/
+     │   │   │       ├── guard-agent.ts         # GUARD implementation
+     │   │   │       ├── security-scanner.ts    # Scan for vulnerabilities
+     │   │   │       ├── rtl-validator.ts       # Validate RTL compliance
+     │   │   │       └── quality-checker.ts     # Check code quality
+     │   │   │
+     │   │   ├── orchestrator/
+     │   │   │   ├── orchestrator.ts            # Main orchestration engine
+     │   │   │   ├── workflow-engine.ts         # Execute multi-agent 
+     workflows
+     │   │   │   └── parallel-executor.ts       # Run independent tasks in 
+     parallel
+     │   │   │
+     │   │   ├── monitoring/
+     │   │   │   ├── metrics-collector.ts       # Collect agent metrics
+     │   │   │   ├── performance-analyzer.ts    # Analyze performance
+     │   │   │   └── dashboard-data.ts          # Prepare data for dashboard
+     │   │   │
+     │   │   └── index.ts                       # Public API exports
+     │   │
+     │   └── deepseek/
+     │       ├── client.ts                      # Existing DeepSeek 
+     integration
+     │       └── ...                            # Other existing files
+     │
+     ├── app/
+     │   └── api/
+     │       └── agents/
+     │           ├── session/
+     │           │   ├── route.ts               # POST: Create session
+     │           │   └── [id]/
+     │           │       ├── route.ts           # GET: Get session status
+     │           │       ├── interact/
+     │           │       │   └── route.ts       # POST: Send message to 
+     session
+     │           │       ├── history/
+     │           │       │   └── route.ts       # GET: Get conversation 
+     history
+     │           │       └── metrics/
+     │           │           └── route.ts       # GET: Get session metrics
+     │           │
+     │           └── admin/
+     │               ├── sessions/
+     │               │   └── route.ts           # GET: List all sessions
+     │               ├── metrics/
+     │               │   └── route.ts           # GET: System-wide metrics
+     │               └── health/
+     │                   └── route.ts           # GET: Agent system health
+     │
+     └── components/
+         └── admin/
+             └── agents/
+                 ├── AgentDashboard.tsx         # Real-time agent monitoring
+                 ├── SessionViewer.tsx          # View session details
+                 ├── MessageFlow.tsx            # Visualize message flow
+                 └── MetricsPanel.tsx           # Display metrics
+
+     supabase/
+     └── migrations/
+         └── 008_agent_system.sql              # Agent system database 
+     schema
+
+     prompts/
+     ├── master-ui-website.md                   # Internal UI guidelines
+     └── master-ui-deepseek-client.md           # Client app UI guidelines
+
+     ---
+     🔧 CORE IMPLEMENTATIONS
+
+     1. Base Agent Class
+
+     File: src/lib/agents/core/base-agent.ts
+
+     import { createClient } from '@/lib/supabase/server'
+     import { MessageBus } from '../communication/message-bus'
+     import { PromptManager } from '../prompts/prompt-manager'
+     import { AgentMessage, AgentTask, AgentType } from './types'
+
+     export abstract class BaseAgent {
+       protected agentType: AgentType
+       protected messageBus: MessageBus
+       protected promptManager: PromptManager
+       protected supabase: ReturnType<typeof createClient>
+
+       constructor(agentType: AgentType) {
+         this.agentType = agentType
+         this.messageBus = MessageBus.getInstance()
+         this.promptManager = new PromptManager()
+       }
+
+       /**
+        * Process a task assigned to this agent
+        */
+       abstract async executeTask(task: AgentTask): Promise<any>
+
+       /**
+        * Generate system prompt with context
+        */
+       protected async getSystemPrompt(sessionId: string): Promise<string> {
+         return this.promptManager.generatePrompt(this.agentType, sessionId)
+       }
+
+       /**
+        * Send message to another agent or broadcast
+        */
+       protected async sendMessage(message: Omit<AgentMessage, 'id' | 
+     'from_agent' | 'created_at'>): Promise<void> {
+         await this.messageBus.publish({
+           ...message,
+           from_agent: this.agentType,
+         })
+       }
+
+       /**
+        * Request approval from CHIEF
+        */
+       protected async requestApproval(
+         sessionId: string,
+         decision: string,
+         reasoning: string
+       ): Promise<boolean> {
+         await this.sendMessage({
+           session_id: sessionId,
+           to_agent: 'chief',
+           message_type: 'REQUEST_APPROVAL',
+           content: JSON.stringify({ decision, reasoning }),
+           priority: 1,
+         })
+
+         // Wait for approval response
+         return this.waitForApproval(sessionId)
+       }
+
+       /**
+        * Wait for approval from CHIEF
+        */
+       private async waitForApproval(sessionId: string): Promise<boolean> {
+         // Implementation would poll or use WebSocket for real-time 
+     response
+         return true // Placeholder
+       }
+
+       /**
+        * Record a decision
+        */
+       protected async recordDecision(params: {
+         sessionId: string
+         taskId?: string
+         decisionType: string
+         decision: string
+         reasoning: string
+         alternatives?: string[]
+       }): Promise<void> {
+         const supabase = await createClient()
+
+         await supabase.from('agent_decisions').insert({
+           session_id: params.sessionId,
+           task_id: params.taskId,
+           decision_type: params.decisionType,
+           made_by: this.agentType,
+           decision: params.decision,
+           reasoning: params.reasoning,
+           alternatives_considered: params.alternatives || [],
+         })
+       }
+
+       /**
+        * Record metrics
+        */
+       protected async recordMetric(params: {
+         sessionId: string
+         metricType: string
+         value: number
+         metadata?: Record<string, any>
+       }): Promise<void> {
+         const supabase = await createClient()
+
+         await supabase.from('agent_metrics').insert({
+           session_id: params.sessionId,
+           agent_type: this.agentType,
+           metric_type: params.metricType,
+           value: params.value,
+           metadata: params.metadata || {},
+         })
+       }
+     }
+
+     2. Message Bus
+
+     File: src/lib/agents/communication/message-bus.ts
+
+     import { createClient } from '@/lib/supabase/server'
+     import { AgentMessage } from '../core/types'
+     import { EventEmitter } from './event-emitter'
+
+     export class MessageBus {
+       private static instance: MessageBus
+       private eventEmitter: EventEmitter
+       private messageQueue: AgentMessage[] = []
+
+       private constructor() {
+         this.eventEmitter = EventEmitter.getInstance()
+       }
+
+       static getInstance(): MessageBus {
+         if (!MessageBus.instance) {
+           MessageBus.instance = new MessageBus()
+         }
+         return MessageBus.instance
+       }
+
+       /**
+        * Publish message to the bus
+        */
+       async publish(message: Omit<AgentMessage, 'id' | 'created_at'>): 
+     Promise<void> {
+         const supabase = await createClient()
+
+         const { data, error } = await supabase
+           .from('agent_messages')
+           .insert(message)
+           .select()
+           .single()
+
+         if (error) throw error
+
+         // Emit event for real-time listeners
+         this.eventEmitter.emit('message:new', data)
+
+         // Add to in-memory queue for processing
+         this.messageQueue.push(data)
+       }
+
+       /**
+        * Subscribe to messages for specific agent
+        */
+       async subscribe(agentType: string, handler: (message: AgentMessage) 
+     => void): Promise<void> {
+         this.eventEmitter.on('message:new', (message: AgentMessage) => {
+           if (message.to_agent === agentType || message.to_agent === null) 
+     {
+             handler(message)
+           }
+         })
+       }
+
+       /**
+        * Get unread messages for agent
+        */
+       async getUnreadMessages(agentType: string, sessionId: string): 
+     Promise<AgentMessage[]> {
+         const supabase = await createClient()
+
+         const { data, error } = await supabase
+           .from('agent_messages')
+           .select('*')
+           .eq('session_id', sessionId)
+           .or(`to_agent.eq.${agentType},to_agent.is.null`)
+           .is('read_at', null)
+           .order('priority', { ascending: false })
+           .order('created_at', { ascending: true })
+
+         if (error) throw error
+         return data || []
+       }
+
+       /**
+        * Mark message as read
+        */
+       async markAsRead(messageId: string): Promise<void> {
+         const supabase = await createClient()
+
+         await supabase
+           .from('agent_messages')
+           .update({ read_at: new Date().toISOString() })
+           .eq('id', messageId)
+       }
+     }
+
+     3. CHIEF Agent (Coordinator)
+
+     File: src/lib/agents/agents/chief/chief-agent.ts
+
+     import { BaseAgent } from '../../core/base-agent'
+     import { AgentTask } from '../../core/types'
+     import { TaskPlanner } from './task-planner'
+     import { DecisionEngine } from './decision-engine'
+     import { ConflictResolver } from './conflict-resolver'
+
+     export class ChiefAgent extends BaseAgent {
+       private taskPlanner: TaskPlanner
+       private decisionEngine: DecisionEngine
+       private conflictResolver: ConflictResolver
+
+       constructor() {
+         super('chief')
+         this.taskPlanner = new TaskPlanner()
+         this.decisionEngine = new DecisionEngine()
+         this.conflictResolver = new ConflictResolver()
+       }
+
+       async executeTask(task: AgentTask): Promise<any> {
+         const startTime = Date.now()
+
+         try {
+           switch (task.task_type) {
+             case 'plan_feature':
+               return await this.planFeature(task)
+             case 'approve_decision':
+               return await this.approveDecision(task)
+             case 'resolve_conflict':
+               return await this.resolveConflict(task)
+             default:
+               throw new Error(`Unknown task type: ${task.task_type}`)
+           }
+         } finally {
+           // Record execution time
+           await this.recordMetric({
+             sessionId: task.session_id,
+             metricType: 'task_duration',
+             value: Date.now() - startTime,
+             metadata: { task_type: task.task_type },
+           })
+         }
+       }
+
+       /**
+        * Plan feature implementation and delegate to agents
+        */
+       private async planFeature(task: AgentTask): Promise<any> {
+         const userRequest = task.input_data.request as string
+
+         // Generate plan
+         const plan = await this.taskPlanner.createPlan(userRequest, 
+     task.session_id)
+
+         // Record the planning decision
+         await this.recordDecision({
+           sessionId: task.session_id,
+           taskId: task.id,
+           decisionType: 'feature_plan',
+           decision: plan.summary,
+           reasoning: plan.reasoning,
+           alternatives: plan.alternativesConsidered,
+         })
+
+         // Delegate tasks to specialized agents
+         for (const subtask of plan.tasks) {
+           await this.delegateTask(task.session_id, subtask)
+         }
+
+         return { plan, delegated_tasks: plan.tasks.length }
+       }
+
+       /**
+        * Delegate task to appropriate agent
+        */
+       private async delegateTask(sessionId: string, subtask: any): 
+     Promise<void> {
+         const supabase = await createClient()
+
+         // Create task in database
+         const { data: createdTask } = await supabase
+           .from('agent_tasks')
+           .insert({
+             session_id: sessionId,
+             agent_type: subtask.agent,
+             task_type: subtask.type,
+             description: subtask.description,
+             status: 'pending',
+             priority: subtask.priority || 0,
+             input_data: subtask.input || {},
+           })
+           .select()
+           .single()
+
+         // Send delegation message
+         await this.sendMessage({
+           session_id: sessionId,
+           to_agent: subtask.agent,
+           message_type: 'TASK_DELEGATION',
+           content: JSON.stringify({
+             task_id: createdTask.id,
+             description: subtask.description,
+             priority: subtask.priority || 0,
+           }),
+           priority: subtask.priority || 0,
+         })
+       }
+
+       /**
+        * Approve decision from another agent
+        */
+       private async approveDecision(task: AgentTask): Promise<any> {
+         const { decision, reasoning, agent } = task.input_data
+
+         const approval = await this.decisionEngine.evaluateDecision({
+           decision,
+           reasoning,
+           agent,
+           sessionId: task.session_id,
+         })
+
+         // Send approval response
+         await this.sendMessage({
+           session_id: task.session_id,
+           to_agent: agent,
+           message_type: 'DIRECT_MESSAGE',
+           content: JSON.stringify({
+             approved: approval.approved,
+             feedback: approval.feedback,
+           }),
+           priority: 1,
+         })
+
+         return approval
+       }
+
+       /**
+        * Resolve conflict between agents
+        */
+       private async resolveConflict(task: AgentTask): Promise<any> {
+         const { conflictType, agents, details } = task.input_data
+
+         const resolution = await this.conflictResolver.resolve({
+           conflictType,
+           agents,
+           details,
+           sessionId: task.session_id,
+         })
+
+         // Broadcast resolution
+         await this.sendMessage({
+           session_id: task.session_id,
+           to_agent: null, // Broadcast
+           message_type: 'BROADCAST_UPDATE',
+           content: JSON.stringify({
+             type: 'conflict_resolution',
+             resolution: resolution.decision,
+             reasoning: resolution.reasoning,
+           }),
+           priority: 2,
+         })
+
+         return resolution
+       }
+     }
+
+     4. Orchestrator
+
+     File: src/lib/agents/orchestrator/orchestrator.ts
+
+     import { createClient } from '@/lib/supabase/server'
+     import { ChiefAgent } from '../agents/chief/chief-agent'
+     import { DesignAgent } from '../agents/design/design-agent'
+     import { DevAgent } from '../agents/dev/dev-agent'
+     import { OpsAgent } from '../agents/ops/ops-agent'
+     import { GuardAgent } from '../agents/guard/guard-agent'
+     import { MessageBus } from '../communication/message-bus'
+     import { WorkflowEngine } from './workflow-engine'
+
+     export class AgentOrchestrator {
+       private agents: Map<string, BaseAgent>
+       private messageBus: MessageBus
+       private workflowEngine: WorkflowEngine
+
+       constructor() {
+         this.messageBus = MessageBus.getInstance()
+         this.workflowEngine = new WorkflowEngine()
+
+         // Initialize all agents
+         this.agents = new Map([
+           ['chief', new ChiefAgent()],
+           ['design', new DesignAgent()],
+           ['dev', new DevAgent()],
+           ['ops', new OpsAgent()],
+           ['guard', new GuardAgent()],
+         ])
+       }
+
+       /**
+        * Start a new agent session
+        */
+       async startSession(params: {
+         userId: string
+         projectId?: string
+         sessionType: string
+         initialRequest: string
+       }): Promise<string> {
+         const supabase = await createClient()
+
+         // Create session
+         const { data: session, error } = await supabase
+           .from('agent_sessions')
+           .insert({
+             user_id: params.userId,
+             project_id: params.projectId,
+             session_type: params.sessionType,
+             status: 'active',
+             metadata: { initial_request: params.initialRequest },
+           })
+           .select()
+           .single()
+
+         if (error) throw error
+
+         // Create initial task for CHIEF
+         await supabase.from('agent_tasks').insert({
+           session_id: session.id,
+           agent_type: 'chief',
+           task_type: 'plan_feature',
+           description: 'Plan implementation for user request',
+           status: 'pending',
+           priority: 10,
+           input_data: { request: params.initialRequest },
+         })
+
+         // Start processing
+         await this.processSession(session.id)
+
+         return session.id
+       }
+
+       /**
+        * Process all pending tasks in a session
+        */
+       async processSession(sessionId: string): Promise<void> {
+         const supabase = await createClient()
+
+         while (true) {
+           // Get next pending task (highest priority first)
+           const { data: tasks } = await supabase
+             .from('agent_tasks')
+             .select('*')
+             .eq('session_id', sessionId)
+             .eq('status', 'pending')
+             .order('priority', { ascending: false })
+             .order('created_at', { ascending: true })
+             .limit(1)
+
+           if (!tasks || tasks.length === 0) break
+
+           const task = tasks[0]
+           const agent = this.agents.get(task.agent_type)
+
+           if (!agent) {
+             console.error(`Unknown agent type: ${task.agent_type}`)
+             continue
+           }
+
+           try {
+             // Mark as in progress
+             await supabase
+               .from('agent_tasks')
+               .update({ status: 'in_progress', started_at: new 
+     Date().toISOString() })
+               .eq('id', task.id)
+
+             // Execute task
+             const result = await agent.executeTask(task)
+
+             // Mark as completed
+             await supabase
+               .from('agent_tasks')
+               .update({
+                 status: 'completed',
+                 output_data: result,
+                 completed_at: new Date().toISOString(),
+               })
+               .eq('id', task.id)
+           } catch (error) {
+             // Mark as failed
+             await supabase
+               .from('agent_tasks')
+               .update({
+                 status: 'failed',
+                 error_details: error instanceof Error ? error.message : 
+     String(error),
+               })
+               .eq('id', task.id)
+           }
+         }
+
+         // Update session status
+         await supabase
+           .from('agent_sessions')
+           .update({ status: 'completed', updated_at: new 
+     Date().toISOString() })
+           .eq('id', sessionId)
+       }
+
+       /**
+        * Get session status
+        */
+       async getSessionStatus(sessionId: string): Promise<any> {
+         const supabase = await createClient()
+
+         const [session, tasks, messages] = await Promise.all([
+           supabase.from('agent_sessions').select('*').eq('id', 
+     sessionId).single(),
+           supabase.from('agent_tasks').select('*').eq('session_id', 
+     sessionId),
+           supabase.from('agent_messages').select('*').eq('session_id', 
+     sessionId).order('created_at'),
+         ])
+
+         return {
+           session: session.data,
+           tasks: tasks.data || [],
+           messages: messages.data || [],
+           progress: this.calculateProgress(tasks.data || []),
+         }
+       }
+
+       private calculateProgress(tasks: any[]): number {
+         if (tasks.length === 0) return 0
+         const completed = tasks.filter(t => t.status === 
+     'completed').length
+         return (completed / tasks.length) * 100
+       }
+     }
+
+     ---
+     🚀 API ENDPOINTS
+
+     Create Agent Session
+
+     POST /api/agents/session
+
+     // Request
+     {
+       "project_id": "uuid",
+       "session_type": "feature" | "deployment" | "qa",
+       "initial_request": "Create a restaurant booking system"
+     }
+
+     // Response
+     {
+       "session_id": "uuid",
+       "status": "active",
+       "created_at": "timestamp"
+     }
+
+     Interact with Session
+
+     POST /api/agents/session/[id]/interact
+
+     // Request
+     {
+       "message": "Add payment integration",
+       "type": "user_request" | "clarification" | "approval"
+     }
+
+     // Response
+     {
+       "acknowledged": true,
+       "message_id": "uuid"
+     }
+
+     Get Session Status
+
+     GET /api/agents/session/[id]
+
+     // Response
+     {
+       "session": {
+         "id": "uuid",
+         "status": "active" | "completed" | "failed",
+         "progress": 75,
+         "current_task": "Design UI specifications"
+       },
+       "tasks": [
+         {
+           "id": "uuid",
+           "agent": "design",
+           "type": "ui_spec",
+           "status": "completed",
+           "started_at": "timestamp",
+           "completed_at": "timestamp"
+         }
+       ],
+       "messages": [
+         {
+           "from": "chief",
+           "to": "design",
+           "type": "TASK_DELEGATION",
+           "content": "...",
+           "timestamp": "timestamp"
+         }
+       ]
+     }
+
+     ---
+     📊 MONITORING & OBSERVABILITY
+
+     Real-Time Agent Dashboard
+
+     Location: /admin/agents/dashboard
+
+     Features:
+     - Active session count
+     - Current task distribution across agents
+     - Real-time message flow visualization
+     - Token usage per agent
+     - Average task completion time
+     - Error rate by agent type
+     - Session success rate
+
+     Metrics to Track
+
+     1. Performance Metrics
+       - Task completion time (p50, p95, p99)
+       - Token usage per agent
+       - API latency
+       - Throughput (tasks/hour)
+     2. Quality Metrics
+       - Validation failure rate (GUARD)
+       - Code quality scores
+       - RTL compliance rate
+       - Security issues found
+     3. Operational Metrics
+       - Active sessions
+       - Queue depth
+       - Agent utilization
+       - Error rate
+
+     ---
+     🧪 TESTING STRATEGY
+
+     Unit Tests
+
+     Each Agent Class:
+     describe('ChiefAgent', () => {
+       it('should create valid task plan from user request', async () => {
+         const chief = new ChiefAgent()
+         const task = createMockTask({ type: 'plan_feature' })
+         const result = await chief.executeTask(task)
+
+         expect(result.plan).toBeDefined()
+         expect(result.delegated_tasks).toBeGreaterThan(0)
+       })
+
+       it('should approve valid decisions', async () => {
+         const chief = new ChiefAgent()
+         const task = createMockTask({
+           type: 'approve_decision',
+           data: { decision: 'Use React Query', reasoning: 'Better state 
+     management' }
+         })
+         const result = await chief.executeTask(task)
+
+         expect(result.approved).toBe(true)
+       })
+     })
+
+     Integration Tests
+
+     Multi-Agent Workflows:
+     describe('Feature Implementation Workflow', () => {
+       it('should complete end-to-end feature implementation', async () => {
+         const orchestrator = new AgentOrchestrator()
+
+         const sessionId = await orchestrator.startSession({
+           userId: 'test-user',
+           sessionType: 'feature',
+           initialRequest: 'Add user profile page with avatar upload'
+         })
+
+         // Wait for completion
+         await waitForSessionComplete(sessionId)
+
+         const status = await orchestrator.getSessionStatus(sessionId)
+
+         expect(status.session.status).toBe('completed')
+         expect(status.tasks.every(t => t.status === 
+     'completed')).toBe(true)
+       })
+     })
+
+     End-to-End Tests (Playwright)
+
+     test('Agent system creates feature from UI', async ({ page }) => {
+       await page.goto('/admin/agents')
+       await page.click('button:has-text("New Session")')
+       await page.fill('[name="request"]', 'Create blog post editor')
+       await page.click('button:has-text("Start")')
+
+       // Wait for agents to process
+       await page.waitForSelector('[data-status="completed"]', { timeout: 
+     60000 })
+
+       const tasks = await page.locator('[data-agent]').count()
+       expect(tasks).toBeGreaterThan(3) // At least CHIEF, DESIGN, DEV
+     })
+
+     ---
+     📅 IMPLEMENTATION TIMELINE (8 Weeks)
+
+     Week 1-2: Infrastructure
+
+     - Database schema migration
+     - Base agent class
+     - Message bus implementation
+     - State manager
+     - TypeScript types
+
+     Week 3-4: Agent Implementation
+
+     - CHIEF agent (coordinator)
+     - DESIGN agent
+     - DEV agent
+     - OPS agent
+     - GUARD agent
+     - Prompt management system
+
+     Week 5: Communication Layer
+
+     - Message routing
+     - Event system
+     - Real-time updates
+     - Approval workflows
+
+     Week 6: API & Integration
+
+     - API endpoints
+     - Admin dashboard
+     - Monitoring system
+     - Integration with existing DeepSeek
+
+     Week 7: Testing
+
+     - Unit tests (90% coverage)
+     - Integration tests
+     - E2E tests
+     - Performance tests
+     - Security audit
+
+     Week 8: Deployment
+
+     - Week 1: Alpha (internal testing, 10% traffic)
+     - Week 2: Beta (selected users, 25% traffic)
+     - Week 3: Staged rollout (50% → 100%)
+     - Week 4: Full deployment + monitoring
+
+     ---
+     🎯 SUCCESS CRITERIA
+
+     Technical Metrics
+
+     - ✅ 99% uptime for agent system
+     - ✅ <5s response time for task delegation
+     - ✅ <500ms for message delivery
+     - ✅ 90%+ test coverage
+     - ✅ Zero data loss during agent failures
+
+     Quality Metrics
+
+     - ✅ 95%+ RTL compliance (validated by GUARD)
+     - ✅ Zero security vulnerabilities in generated code
+     - ✅ 100% Master UI Prompt compliance
+     - ✅ <5% task failure rate
+
+     Business Metrics
+
+     - ✅ 50% reduction in manual code review time
+     - ✅ 30% faster feature implementation
+     - ✅ 80%+ user satisfaction with agent-generated code
+     - ✅ <1% regression rate after agent changes
+
+     ---
+     🔐 SECURITY CONSIDERATIONS
+
+     Agent Isolation
+
+     - Each agent runs in isolated context
+     - Permission-based resource access
+     - No cross-session data leakage
+
+     Input Validation
+
+     - All user prompts sanitized
+     - SQL injection prevention
+     - XSS protection in generated code
+
+     Code Security
+
+     - GUARD agent scans for vulnerabilities
+     - No eval() or dangerous functions
+     - Rate limiting on agent API calls
+
+     Data Privacy
+
+     - User data encrypted at rest
+     - Agent conversations logged securely
+     - GDPR compliance for EU users
+
+     ---
+     📚 DOCUMENTATION TO CREATE
+
+     Developer Documentation
+
+     - docs/agents/ARCHITECTURE.md - System architecture overview
+     - docs/agents/GETTING_STARTED.md - Quick start guide
+     - docs/agents/API_REFERENCE.md - API endpoint documentation
+     - docs/agents/AGENT_TYPES.md - Detailed agent descriptions
+     - docs/agents/WORKFLOWS.md - Common workflow patterns
+
+     Agent Prompt Files
+
+     - prompts/master-ui-website.md - Internal UI guidelines (from user's 
+     request)
+     - prompts/master-ui-deepseek-client.md - Client app UI guidelines (from
+      user's request)
+     - Agent prompts reference existing TypeScript files - No duplication
+
+     Admin Documentation
+
+     - docs/admin/MONITORING.md - How to monitor agent system
+     - docs/admin/TROUBLESHOOTING.md - Common issues and solutions
+     - docs/admin/METRICS.md - Understanding metrics and alerts
+
+     ---
+     🚧 MIGRATION FROM CURRENT SYSTEM
+
+     Phase 1: Parallel Operation
+
+     - Agent system runs alongside existing DeepSeek integration
+     - Users can choose agent-based or direct generation
+     - All existing functionality preserved
+
+     Phase 2: Gradual Migration
+
+     - New features use agent system by default
+     - Existing projects can opt-in to agent-based improvements
+     - Monitor metrics closely for regressions
+
+     Phase 3: Full Transition
+
+     - Agent system becomes primary code generation method
+     - Direct DeepSeek integration becomes internal implementation detail
+     - Legacy endpoints deprecated but maintained
+
+     ---
+     ✅ FINAL CHECKLIST
+
+     Before Starting Implementation
+
+     - Database schema reviewed and approved
+     - Architecture approved by team
+     - Agent prompt content finalized
+     - Success metrics defined
+     - Timeline agreed upon
+
+     After Implementation
+
+     - All tests passing (unit, integration, E2E)
+     - Documentation complete
+     - Performance benchmarks met
+     - Security audit passed
+     - Monitoring dashboards deployed
+     - Rollback plan documented
+     - Team trained on agent system
+
+     ---
+     📝 NOTES
+
+     Integration with Existing Master UI Prompts
+
+     - Agent prompts will reference existing TypeScript files at:
+       - src/lib/prompts/master-ui-prompt.ts
+       - src/lib/deepseek/master-ui-prompt.ts
+     - No duplication - single source of truth maintained
+     - Agents import and use these prompts dynamically
+
+     Why Full Orchestration?
+
+     Per user's choice, we're building the full production-grade system 
+     rather than minimal integration. This provides:
+     - Complete agent coordination and delegation
+     - State persistence and resumability
+     - Real-time monitoring and observability
+     - Scalable architecture for future enhancements
+     - Enterprise-ready with proper error handling
+
+     Next Steps
+
+     1. Review and approve this plan
+     2. Create database migration file
+     3. Implement core infrastructure (Weeks 1-2)
+     4. Build agents sequentially (Weeks 3-4)
+     5. Add communication layer (Week 5)
+     6. Create APIs and dashboard (Week 6)
+     7. Test thoroughly (Week 7)
+     8. Deploy gradually (Week 8)
+
+
+
+
+
+
+
+
+
+⏺ Perfect! The plan has been approved. Let me start implementing the
+  multi-agent orchestration system. I'll begin with the infrastructure
+  foundation as outlined in Week 1-2 of the plan.
+
+⏺ Now I'll create the database migration file for the agent system with all
+  7 tables and indexes:
+
+⏺ Write(supabase/migrations/008_agent_system.sql)
+  ⎿  Wrote 337 lines to supabase/migrations/008_agent_system.sql           
+     -- =====================================================
+     -- KW APPS Multi-Agent System Database Schema
+     -- Migration: 008_agent_system.sql
+     -- Purpose: Create tables and indexes for the multi-agent orchestration
+      system
+     -- =====================================================
+     -- Agent Sessions
+     -- Tracks active and completed agent collaboration sessions
+     CREATE TABLE agent_sessions (
+       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+     … +327 lines (ctrl+o to expand)
+
+⏺ Now I'll create the TypeScript types for the agent system:
+
+⏺ Write(src/lib/agents/core/types.ts)
+  ⎿  Wrote 601 lines to src/lib/agents/core/types.ts                     
+     /**
+      * KW APPS Multi-Agent System - Type Definitions
+      *
+      * Comprehensive TypeScript types for the agent orchestration system
+      */
+     // =====================================================
+     // AGENT TYPES
+     // =====================================================
+     … +591 lines (ctrl+o to expand)
+
+⏺ Now I'll create the base agent class that all specialized agents will
+  extend:
+
+⏺ Write(src/lib/agents/core/base-agent.ts)
+  ⎿  Wrote 603 lines to src/lib/agents/core/base-agent.ts               
+     /**
+      * KW APPS Multi-Agent System - Base Agent Class
+      *
+      * Abstract base class that all specialized agents extend.
+      * Provides core functionality for communication, state management,
+      * decision recording, and metrics tracking.
+      */
+     import { createClient } from '@/lib/supabase/server'
+     import type { SupabaseClient } from '@supabase/supabase-js'
+     … +593 lines (ctrl+o to expand)
+
+⏺ Now I'll create the message bus communication system:
+
+⏺ Write(src/lib/agents/communication/message-bus.ts)
+  ⎿  Wrote 521 lines to src/lib/agents/communication/message-bus.ts     
+     /**
+      * KW APPS Multi-Agent System - Message Bus
+      *
+      * Central message routing system for inter-agent communication.
+      * Handles message delivery, priority queuing, and real-time event 
+     emission.
+      */
+     import { createClient } from '@/lib/supabase/server'
+     import type { SupabaseClient } from '@supabase/supabase-js'
+     import type { AgentMessage, MessageType, MessageSender } from
+     '../core/types'
+     … +511 lines (ctrl+o to expand)
+
+⏺ Perfect! I've successfully created the core infrastructure components for
+  the multi-agent orchestration system:
+
+  1. ✅ Database Migration (008_agent_system.sql) - 7 tables with indexes,
+  RLS policies, triggers, and helper functions
+  2. ✅ TypeScript Types (core/types.ts) - Comprehensive type definitions
+  for the entire system
+  3. ✅ Base Agent Class (core/base-agent.ts) - Abstract class with
+  messaging, task management, decision recording, and metrics
+  4. ✅ Message Bus (communication/message-bus.ts) - Central message routing
+   with priority queuing and real-time events
+
+  The foundation is now in place! The next steps would be to implement:
+  - State management system
+  - Prompt management system
+  - The 5 specialized agents (CHIEF, DESIGN, DEV, OPS, GUARD)
+  - Orchestrator
+  - API endpoints
+  - Master UI prompt markdown files
+
+  This infrastructure provides:
+  - Database schema for persisting all agent sessions, tasks, messages,
+  decisions, snapshots, and metrics
+  - Type safety across the entire system
+  - Base functionality that all agents inherit (messaging, task management,
+  approvals, metrics)
+  - Message bus for reliable inter-agent communication with priority
+  handling
+
+  All agents can now communicate through the message bus, record their
+  decisions, track metrics, and collaborate on complex tasks like a real
+  development team!
+
+
+
