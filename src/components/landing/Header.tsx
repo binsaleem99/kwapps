@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useUser, UserButton, SignInButton, SignUpButton, SignOutButton } from "@clerk/nextjs";
+import { useUser, UserButton, SignOutButton } from "@clerk/nextjs";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -116,23 +116,21 @@ export function Header() {
               </>
             ) : (
               <>
-                <SignInButton mode="redirect">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-black border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105 transition-all duration-300"
-                  >
-                    تسجيل الدخول
-                  </Button>
-                </SignInButton>
-                <SignUpButton mode="redirect">
-                  <Button
-                    size="sm"
-                    className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
-                  >
-                    ابدأ مجاناً
-                  </Button>
-                </SignUpButton>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-black border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105 transition-all duration-300"
+                  asChild
+                >
+                  <Link href="/sign-in">تسجيل الدخول</Link>
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
+                  asChild
+                >
+                  <Link href="/sign-up">ابدأ مجاناً</Link>
+                </Button>
               </>
             )}
           </nav>
@@ -229,16 +227,16 @@ export function Header() {
                       className="font-bold w-full"
                       asChild
                     >
-                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                      <Link href="/sign-in" onClick={() => setMobileMenuOpen(false)}>
                         تسجيل الدخول
                       </Link>
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-gradient-primary text-white font-bold w-full"
+                      className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold w-full"
                       asChild
                     >
-                      <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                      <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
                         ابدأ مجاناً
                       </Link>
                     </Button>
