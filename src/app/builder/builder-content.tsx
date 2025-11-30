@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useAuth } from '@clerk/nextjs'
 import { createClient } from '@/lib/supabase/client'
 import ChatPanel from '@/components/builder/chat-panel'
 import PreviewPanel from '@/components/builder/preview-panel'
@@ -14,6 +15,7 @@ import { DeployButton } from '@/components/deploy/DeployButton'
 export function BuilderPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { userId, isLoaded } = useAuth()
   const projectIdParam = searchParams.get('project')
 
   const [projectId, setProjectId] = useState<string | null>(projectIdParam)
@@ -23,16 +25,19 @@ export function BuilderPageContent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    checkAuthAndLoadProject()
-  }, [projectIdParam])
+    if (isLoaded) {
+      checkAuthAndLoadProject()
+    }
+  }, [projectIdParam, isLoaded, userId])
 
   async function checkAuthAndLoadProject() {
+    if (!userId) {
+      router.push('/sign-in?redirect_url=/builder')
+      return
+    }
+
     try {
       const supabase = createClient()
-
-      // SECURITY: Get user from Clerk (handled by middleware)
-      // If we're here, user is authenticated
-      // We just need to get the userId from the URL or create a new project
 
       // If project ID provided, load existing project
       if (projectIdParam) {
@@ -40,23 +45,23 @@ export function BuilderPageContent() {
           .from('projects')
           .select('id, name, generated_code, status')
           .eq('id', projectIdParam)
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .maybeSingle()
 
         if (projectError) {
           console.error('Error loading project:', projectError)
-          await createNewProject(user.id)
+          await createNewProject(userId)
         } else if (project) {
           setProjectId(project.id)
           setProjectName(project.name)
           setGeneratedCode(project.generated_code || null)
         } else {
           // Project not found, create new one
-          await createNewProject(user.id)
+          await createNewProject(userId)
         }
       } else {
         // No project ID, create new project
-        await createNewProject(user.id)
+        await createNewProject(userId)
       }
 
       setIsLoading(false)

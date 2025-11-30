@@ -338,7 +338,7 @@ export async function GET(request: NextRequest) {
     const { data: todayUsage } = await supabase
       .from('usage_limits')
       .select('prompt_count')
-      .eq('user_id', authUser.id)
+      .eq('user_id', userId)
       .eq('date', today)
       .single()
 
@@ -346,7 +346,7 @@ export async function GET(request: NextRequest) {
     const { data: monthUsage } = await supabase
       .from('usage_limits')
       .select('prompt_count')
-      .eq('user_id', authUser.id)
+      .eq('user_id', userId)
       .gte('date', startOfMonth)
 
     const todayCount = todayUsage?.prompt_count || 0

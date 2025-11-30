@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useUser, UserButton, SignInButton, SignUpButton } from "@clerk/nextjs";
+import { useUser, UserButton, SignInButton, SignUpButton, SignOutButton } from "@clerk/nextjs";
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -196,8 +196,8 @@ export function Header() {
               >
                 إنشاء تطبيق
               </Link>
-              <div className="flex flex-col gap-2 pt-2 border-t border-slate-200">
-                {loading ? (
+              <div className="flex flex-col gap-2 pt-2 border-slate-200">
+                {!isLoaded ? (
                   <div className="w-full h-10 bg-slate-200 animate-pulse rounded-lg" />
                 ) : user ? (
                   <>
@@ -210,17 +210,16 @@ export function Header() {
                         لوحة التحكم
                       </Link>
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        handleLogout();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="font-bold w-full hover:border-red-500"
-                    >
-                      تسجيل الخروج
-                    </Button>
+                    <SignOutButton>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="font-bold w-full hover:border-red-500"
+                      >
+                        تسجيل الخروج
+                      </Button>
+                    </SignOutButton>
                   </>
                 ) : (
                   <>
