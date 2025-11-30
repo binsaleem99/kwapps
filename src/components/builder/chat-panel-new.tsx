@@ -180,7 +180,7 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
         .map(([questionId, answer]) => {
           const question = clarificationQuestions.find((q) => q.id === questionId)
           const option = question?.options.find((o) => o.value === answer)
-          return option ? `${question.question} → ${option.label}` : ''
+          return option && question ? `${question.question} → ${option.label}` : ''
         })
         .filter(Boolean)
         .join('\n')
