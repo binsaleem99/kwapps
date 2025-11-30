@@ -168,23 +168,26 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="flex-shrink-0 bg-white border-b border-gray-200 p-4">
+      <div className="flex-shrink-0 bg-gradient-to-r from-slate-50 to-white border-b border-gray-200 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 font-['Cairo']">معاينة مباشرة</h2>
+          <div className="flex items-center gap-2">
+            <Monitor className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-gray-900 font-['Cairo']">معاينة مباشرة</h2>
+          </div>
 
           <div className="flex items-center gap-2">
             {/* Device Mode Selector */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 border border-slate-200">
               {(['desktop', 'tablet', 'mobile'] as DeviceMode[]).map((mode) => {
                 const Icon = deviceIcons[mode]
                 return (
                   <button
                     key={mode}
                     onClick={() => setDeviceMode(mode)}
-                    className={`p-2 rounded transition-colors ${
+                    className={`p-2 rounded-md transition-all duration-200 ${
                       deviceMode === mode
-                        ? 'bg-white text-blue-500 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
+                        ? 'bg-white text-blue-600 shadow-md scale-105'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
                     }`}
                     title={mode === 'desktop' ? 'سطح المكتب' : mode === 'tablet' ? 'تابلت' : 'موبايل'}
                   >
@@ -201,6 +204,7 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
               onClick={handleReload}
               title="إعادة تحميل"
               disabled={!code}
+              className="border-2 hover:border-blue-500 hover:text-blue-600 transition-all"
             >
               <RotateCcw className="w-4 h-4" />
             </Button>
@@ -212,6 +216,7 @@ export default function PreviewPanel({ code, isLoading = false }: PreviewPanelPr
               onClick={handleFullscreen}
               title="ملء الشاشة"
               disabled={!code}
+              className="border-2 hover:border-blue-500 hover:text-blue-600 transition-all"
             >
               <Maximize2 className="w-4 h-4" />
             </Button>
