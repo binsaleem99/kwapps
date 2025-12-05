@@ -25,7 +25,7 @@ export function Hero() {
       <FloatingShapes count={5} variant="bold" />
 
       {/* ASYMMETRIC 40/60 LAYOUT - Fighting predictable 50/50 grids */}
-      <div className="container mx-auto px-4 pt-32 pb-24 relative z-10">
+      <div className="container mx-auto px-4 pt-20 pb-16 md:pt-32 md:pb-24 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           {/* RIGHT COLUMN: 60% - EXTREME TYPOGRAPHY */}
           <div className="lg:col-span-7 text-right">
@@ -72,7 +72,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="text-xl mb-12 max-w-2xl text-slate-600 leading-relaxed"
+              className="text-xl mb-16 md:mb-12 max-w-2xl text-slate-600 leading-relaxed"
             >
               من الفكرة إلى التطبيق الكامل في دقائق.{' '}
               <span className="font-extrabold text-blue-600">
