@@ -11,7 +11,7 @@
  * - Card tokenization for recurring payments
  */
 
-const UPAYMENTS_API_URL = process.env.UPAYMENTS_API_URL || 'https://api.upayments.com/api/v1'
+const UPAYMENTS_API_URL = (process.env.UPAYMENTS_API_URL || 'https://uapi.upayments.com/api/v1').trim().replace(/[\r\n\s]/g, '')
 const UPAYMENTS_SANDBOX_URL = 'https://sandboxapi.upayments.com/api/v1'
 const UPAYMENTS_API_KEY = process.env.UPAYMENTS_API_KEY || ''
 const IS_SANDBOX = process.env.UPAYMENTS_SANDBOX === 'true'
@@ -239,6 +239,8 @@ class UPaymentsClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
 
+    console.log(`[UPayments] Requesting: ${url}`)
+
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -248,10 +250,19 @@ class UPaymentsClient {
       },
     })
 
+    // Check content-type before parsing
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text()
+      console.error(`[UPayments] Non-JSON response (${response.status}):`, text.substring(0, 200))
+      throw new Error(`UPayments API Error: Server returned non-JSON response (status ${response.status})`)
+    }
+
     const data = await response.json()
 
     if (!response.ok || data.status === false) {
       const errorMessage = data.message || data.error?.message || response.statusText
+      console.error(`[UPayments] API Error:`, data)
       throw new Error(`UPayments API Error: ${errorMessage}`)
     }
 

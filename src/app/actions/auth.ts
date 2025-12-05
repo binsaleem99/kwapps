@@ -42,14 +42,18 @@ export async function syncUserToDatabase() {
       .maybeSingle()
 
     if (!existingUser) {
-      // Create new user record
-      await supabase.from('users').insert({
+      // Create new user record (only include columns that exist in base schema)
+      const { error: insertError } = await supabase.from('users').insert({
         id: userId,
         email: userEmail,
         display_name: userName,
         plan: 'free',
-        onboarding_completed: false,
       })
+
+      if (insertError) {
+        console.error('Error inserting user:', insertError)
+        // Don't throw - trigger might have already created the user
+      }
     }
 
     return { success: true }

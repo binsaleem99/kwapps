@@ -125,7 +125,7 @@ export function OffersStep({ onSelectTier, onBack, isLoading }: OffersStepProps)
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 font-cairo">
-              ابدأ بـ <span className="font-bold text-blue-600 dark:text-blue-400">تجربة مجانية</span> لمدة أسبوع كامل
+              جرّب أسبوع كامل بـ <span className="font-bold text-blue-600 dark:text-blue-400">دينار واحد فقط</span>
             </p>
           </div>
 
@@ -174,10 +174,10 @@ export function OffersStep({ onSelectTier, onBack, isLoading }: OffersStepProps)
                   </div>
                   <div>
                     <div className="text-sm font-bold text-slate-900 dark:text-white font-cairo">
-                      تجربة مجانية لمدة 7 أيام
+                      جرّب أسبوع كامل بدينار
                     </div>
                     <div className="text-xs text-slate-600 dark:text-slate-400 font-cairo">
-                      {withTrial ? 'دينار واحد فقط' : 'بدون تجربة (خصم 10%)'}
+                      {withTrial ? '1 د.ك للأسبوع الأول' : 'بدون تجربة (خصم 10%)'}
                     </div>
                   </div>
                 </div>
@@ -339,7 +339,7 @@ export function OffersStep({ onSelectTier, onBack, isLoading }: OffersStepProps)
                     ) : (
                       <div className="flex items-center justify-center gap-2">
                         <span>
-                          {withTrial ? 'ابدأ التجربة المجانية' : 'اشترك الآن'}
+                          {withTrial ? 'جرّب أسبوع بدينار' : 'اشترك الآن'}
                         </span>
                         <ArrowRight className="w-5 h-5" />
                       </div>
@@ -360,7 +360,7 @@ export function OffersStep({ onSelectTier, onBack, isLoading }: OffersStepProps)
             </div>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-4 font-cairo">
-              إلغاء في أي وقت • لا حاجة لبطاقة ائتمانية للتجربة المجانية
+              إلغاء في أي وقت • K-Net وبطاقات معتمدة • دينار واحد للتجربة
             </p>
           </div>
         </div>

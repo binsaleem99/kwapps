@@ -5,6 +5,8 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
   const next = requestUrl.searchParams.get('next')
+  const tierParam = requestUrl.searchParams.get('tier')
+  const trialParam = requestUrl.searchParams.get('trial')
   const origin = requestUrl.origin
 
   if (code) {
@@ -22,25 +24,45 @@ export async function GET(request: Request) {
         .from('users')
         .select('id')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
 
       // If user doesn't exist, create profile
+      // The trigger should handle this, but we do it manually as backup
       if (!existingUser) {
-        await supabase.from('users').insert({
+        const displayName = data.user.user_metadata.full_name
+          || data.user.user_metadata.name
+          || data.user.email?.split('@')[0]
+          || 'User'
+
+        const { error: insertError } = await supabase.from('users').insert({
           id: data.user.id,
           email: data.user.email!,
-          display_name: data.user.user_metadata.full_name || data.user.user_metadata.name || 'User',
+          display_name: displayName,
           plan: 'free',
-          onboarding_completed: false,
         })
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError)
+          // Continue anyway - trigger might have created it
+        }
       }
 
-      // Get user data to determine redirect
+      // If there's a tier parameter, redirect to checkout page
+      if (tierParam) {
+        const checkoutUrl = new URL(`${origin}/checkout`)
+        checkoutUrl.searchParams.set('tier', tierParam)
+        if (trialParam) {
+          checkoutUrl.searchParams.set('trial', trialParam)
+        }
+        return NextResponse.redirect(checkoutUrl.toString())
+      }
+
+      // Get user data to determine redirect (with fallback for missing columns)
       const { data: user } = await supabase
         .from('users')
-        .select('is_admin, onboarding_completed')
+        .select('is_admin')
         .eq('id', data.user.id)
-        .single()
+        .maybeSingle()
 
       // Smart redirect based on user type
       if (user?.is_admin) {

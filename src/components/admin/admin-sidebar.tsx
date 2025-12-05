@@ -45,8 +45,8 @@ const navigation = [
     icon: DollarSign,
   },
   {
-    name: 'إدارة المحتوى',
-    href: '/admin/content',
+    name: 'إدارة المدونة',
+    href: '/admin/blog',
     icon: BookOpen,
   },
   {

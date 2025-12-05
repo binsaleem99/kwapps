@@ -138,7 +138,7 @@ export default PortfolioPage;`,
             <span className="text-xl font-bold font-['Cairo']">تطبيقي</span>
           </div>
           <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition font-['Cairo']">
-            ابدأ الآن
+            جرّب بدينار
           </button>
         </div>
       </header>
@@ -154,7 +154,7 @@ export default PortfolioPage;`,
             </p>
             <div className="flex gap-4 justify-center">
               <button className="bg-blue-500 text-white px-8 py-4 rounded-xl text-lg hover:bg-blue-600 transition font-['Cairo']">
-                تجربة مجانية
+                جرّب أسبوع بدينار
               </button>
               <button className="border-2 border-slate-300 text-slate-700 px-8 py-4 rounded-xl text-lg hover:border-blue-500 transition font-['Cairo']">
                 شاهد الفيديو

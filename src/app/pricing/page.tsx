@@ -1,28 +1,75 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
-import { Check, Sparkles, Zap, Building2, Users } from 'lucide-react'
+import { Check, Sparkles, Zap, Building2, Users, Crown, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import type { SubscriptionTierName } from '@/types/billing'
 
 export default function PricingPage() {
+  const router = useRouter()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [loadingTier, setLoadingTier] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubscribe = async (tierName: SubscriptionTierName, isTrial: boolean = false) => {
+    setLoadingTier(tierName)
+    setError(null)
+
+    try {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        router.push(`/sign-in?redirect=/pricing&tier=${tierName}&trial=${isTrial}`)
+        return
+      }
+
+      const response = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier_name: tierName,
+          is_trial: isTrial,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.error_en || 'فشل إنشاء جلسة الدفع')
+      }
+
+      if (data.payment_link) {
+        window.location.href = data.payment_link
+      } else {
+        throw new Error('لم يتم استلام رابط الدفع')
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err)
+      setError(err.message || 'حدث خطأ أثناء الاشتراك')
+    } finally {
+      setLoadingTier(null)
+    }
+  }
 
   const plans = [
     {
-      id: 'developer',
-      name: 'المطور',
+      id: 'basic' as SubscriptionTierName,
+      name: 'أساسي',
       description: 'للمستقلين وأصحاب المشاريع الناشئة',
       icon: Zap,
-      monthlyPrice: 27,
-      yearlyPrice: 22,
-      yearlyTotal: 264,
+      monthlyPrice: 23,
+      yearlyPrice: 19,
+      yearlyTotal: 228,
       trialPrice: 1,
       hasTrial: true,
       features: [
-        '10 مشاريع',
-        '50 طلبات AI يومياً',
+        '100 رصيد شهرياً',
+        '5 رصيد يومي إضافي',
         'جميع القوالب',
         'تصدير الكود',
         'دعم فني',
@@ -30,27 +77,46 @@ export default function PricingPage() {
       popular: false,
     },
     {
-      id: 'professional',
-      name: 'الاحترافي',
+      id: 'pro' as SubscriptionTierName,
+      name: 'احترافي',
       description: 'للشركات الصغيرة والمحترفين',
       icon: Building2,
-      monthlyPrice: 39,
-      yearlyPrice: 31,
-      yearlyTotal: 372,
+      monthlyPrice: 38,
+      yearlyPrice: 30,
+      yearlyTotal: 360,
       trialPrice: null,
       hasTrial: false,
       features: [
-        '25 مشروع',
-        '100 طلبات AI يومياً',
+        '200 رصيد شهرياً',
+        '8 رصيد يومي إضافي',
         'أولوية في المعالجة',
-        'نطاق خاص',
+        'نشر على Vercel',
         'تحليلات متقدمة',
       ],
       popular: true,
     },
     {
-      id: 'agency',
-      name: 'الوكالات',
+      id: 'premium' as SubscriptionTierName,
+      name: 'مميز',
+      description: 'للمحترفين الذين يحتاجون المزيد',
+      icon: Crown,
+      monthlyPrice: 59,
+      yearlyPrice: 47,
+      yearlyTotal: 564,
+      trialPrice: null,
+      hasTrial: false,
+      features: [
+        '350 رصيد شهرياً',
+        '12 رصيد يومي إضافي',
+        'توليد صور AI',
+        'نطاق مخصص',
+        'دعم مباشر',
+      ],
+      popular: false,
+    },
+    {
+      id: 'enterprise' as SubscriptionTierName,
+      name: 'مؤسسي',
       description: 'للوكالات التي تدير عملاء متعددين',
       icon: Users,
       monthlyPrice: 75,
@@ -59,8 +125,8 @@ export default function PricingPage() {
       trialPrice: null,
       hasTrial: false,
       features: [
-        'مشاريع غير محدودة',
-        '9999 طلبات AI يومياً',
+        '500 رصيد شهرياً',
+        '15 رصيد يومي إضافي',
         'واجهة بيضاء (White-label)',
         'مدير حساب خاص',
         'API Access',
@@ -90,8 +156,8 @@ export default function PricingPage() {
             <Link href="/sign-in">
               <Button variant="outline" className="font-['Cairo']">تسجيل الدخول</Button>
             </Link>
-            <Link href="/sign-up">
-              <Button className="font-['Cairo'] bg-blue-600 hover:bg-blue-700">ابدأ الآن</Button>
+            <Link href="/sign-up?tier=basic&trial=true">
+              <Button className="font-['Cairo'] bg-blue-600 hover:bg-blue-700">جرّب بدينار</Button>
             </Link>
           </nav>
         </div>
@@ -102,7 +168,7 @@ export default function PricingPage() {
         <div className="container mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6 font-['Cairo']">
             <Sparkles className="w-4 h-4" />
-            جرب خطة المطور بـ 1 د.ك لمدة أسبوع
+            جرب الخطة الأساسية بـ 1 د.ك لمدة أسبوع
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 text-slate-900 font-['Cairo']">
             اختر الخطة المناسبة لمشروعك
@@ -137,13 +203,51 @@ export default function PricingPage() {
               </span>
             </button>
           </div>
+
+          {/* Payment Methods Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+            <span className="text-sm text-gray-500 font-['Cairo']">طرق الدفع:</span>
+            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+              {/* K-Net */}
+              <div className="flex items-center gap-1">
+                <div className="w-8 h-5 bg-[#003087] rounded flex items-center justify-center">
+                  <span className="text-white text-[8px] font-bold">KNET</span>
+                </div>
+              </div>
+              {/* Visa */}
+              <div className="w-10 h-6 bg-[#1A1F71] rounded flex items-center justify-center">
+                <span className="text-white text-[10px] font-bold italic">VISA</span>
+              </div>
+              {/* Mastercard */}
+              <div className="flex items-center -space-x-1">
+                <div className="w-4 h-4 bg-[#EB001B] rounded-full"></div>
+                <div className="w-4 h-4 bg-[#F79E1B] rounded-full"></div>
+              </div>
+              {/* Apple Pay */}
+              <div className="w-10 h-6 bg-black rounded flex items-center justify-center">
+                <span className="text-white text-[10px] font-medium"> Pay</span>
+              </div>
+            </div>
+            <span className="text-xs text-gray-400 font-['Cairo']">آمن ومشفر عبر UPayments</span>
+          </div>
         </div>
       </section>
+
+      {/* Error Display */}
+      {error && (
+        <section className="pb-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-md mx-auto p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-bold text-center font-['Cairo']">
+              {error}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Pricing Cards */}
       <section className="pb-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {plans.map((plan) => {
               const Icon = plan.icon
               const currentPrice = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
@@ -205,17 +309,28 @@ export default function PricingPage() {
                   </div>
 
                   {/* CTA Button */}
-                  <Link href="/sign-up" className="mb-6">
+                  <div className="mb-6">
                     <Button
-                      className={`w-full py-6 text-lg font-bold font-['Cairo'] ${
+                      onClick={() => handleSubscribe(plan.id, plan.hasTrial)}
+                      disabled={loadingTier !== null}
+                      className={`w-full py-6 text-lg font-bold font-['Cairo'] disabled:opacity-50 ${
                         plan.popular
                           ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : 'bg-slate-900 hover:bg-slate-800 text-white'
                       }`}
                     >
-                      {plan.hasTrial ? `جرب أسبوع بـ ${plan.trialPrice} د.ك` : 'اشترك الآن'}
+                      {loadingTier === plan.id ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          جاري التحميل...
+                        </span>
+                      ) : plan.hasTrial ? (
+                        `جرب أسبوع بـ ${plan.trialPrice} د.ك`
+                      ) : (
+                        'اشترك الآن'
+                      )}
                     </Button>
-                  </Link>
+                  </div>
 
                   {/* Features */}
                   <div className="border-t pt-6">
@@ -251,9 +366,9 @@ export default function PricingPage() {
               <thead className="bg-slate-50 border-b">
                 <tr>
                   <th className="p-5 text-right font-semibold font-['Cairo']">الميزة</th>
-                  <th className="p-5 text-center font-semibold font-['Cairo']">المطور</th>
-                  <th className="p-5 text-center font-semibold font-['Cairo'] bg-blue-50">الاحترافي</th>
-                  <th className="p-5 text-center font-semibold font-['Cairo']">الوكالات</th>
+                  <th className="p-5 text-center font-semibold font-['Cairo']">أساسي</th>
+                  <th className="p-5 text-center font-semibold font-['Cairo'] bg-blue-50">احترافي</th>
+                  <th className="p-5 text-center font-semibold font-['Cairo']">مؤسسي</th>
                 </tr>
               </thead>
               <tbody>
@@ -371,13 +486,23 @@ export default function PricingPage() {
             جاهز للبدء؟
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto font-['Cairo']">
-            جرب خطة المطور لمدة أسبوع كامل بدينار واحد فقط. لا التزام، إلغاء سهل.
+            جرب الخطة الأساسية لمدة أسبوع كامل بدينار واحد فقط. لا التزام، إلغاء سهل.
           </p>
-          <Link href="/sign-up">
-            <Button size="lg" className="text-lg px-10 py-6 bg-white text-blue-600 hover:bg-gray-100 font-bold font-['Cairo']">
-              ابدأ التجربة الآن
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            onClick={() => handleSubscribe('basic', true)}
+            disabled={loadingTier !== null}
+            className="text-lg px-10 py-6 bg-white text-blue-600 hover:bg-gray-100 font-bold font-['Cairo'] disabled:opacity-50"
+          >
+            {loadingTier === 'basic' ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                جاري التحميل...
+              </span>
+            ) : (
+              'جرّب أسبوع بدينار واحد'
+            )}
+          </Button>
         </div>
       </section>
 

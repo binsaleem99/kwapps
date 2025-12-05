@@ -16,6 +16,7 @@ import {
   Zap,
   Clock,
   RefreshCw,
+  CreditCard,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -55,6 +56,13 @@ const services = [
     status: 'operational',
     icon: Activity,
     uptime: '99.90%',
+  },
+  {
+    name: 'بوابة الدفع',
+    description: 'UPayments - K-Net & Visa/MC',
+    status: 'operational',
+    icon: CreditCard,
+    uptime: '99.99%',
   },
 ]
 

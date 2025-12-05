@@ -12,8 +12,6 @@ import {
   Heart,
   Star,
   ExternalLink,
-  Github,
-  Twitter,
   Globe,
 } from 'lucide-react'
 
@@ -21,28 +19,20 @@ export const dynamic = 'force-dynamic'
 
 const communityLinks = [
   {
-    title: 'Discord',
-    description: 'انضم لمجتمعنا على Discord للدردشة المباشرة مع المطورين',
+    title: 'واتساب',
+    description: 'تواصل معنا مباشرة عبر واتساب للدعم الفوري',
     icon: MessageSquare,
-    color: 'bg-indigo-100 text-indigo-600',
-    link: '#',
-    members: '+500',
+    color: 'bg-green-100 text-green-600',
+    link: 'https://wa.me/96599000000',
+    members: 'دعم فوري',
   },
   {
-    title: 'Twitter',
-    description: 'تابعنا للحصول على آخر الأخبار والتحديثات',
-    icon: Twitter,
+    title: 'البريد الإلكتروني',
+    description: 'راسلنا للاستفسارات والمقترحات',
+    icon: Globe,
     color: 'bg-blue-100 text-blue-600',
-    link: 'https://twitter.com/kwapps',
-    members: '@kwapps',
-  },
-  {
-    title: 'GitHub',
-    description: 'ساهم في تطوير المشاريع مفتوحة المصدر',
-    icon: Github,
-    color: 'bg-slate-100 text-slate-600',
-    link: 'https://github.com/kwapps',
-    members: 'مفتوح المصدر',
+    link: 'mailto:support@kwapps.com',
+    members: 'support@kwapps.com',
   },
 ]
 
@@ -71,8 +61,8 @@ const showcaseProjects = [
 ]
 
 const stats = [
-  { value: '5,000+', label: 'مستخدم نشط' },
-  { value: '15,000+', label: 'تطبيق تم إنشاؤه' },
+  { value: '🚀', label: 'انضم للمستخدمين الأوائل' },
+  { value: '1 د.ك', label: 'ابدأ تجربتك الآن' },
   { value: '50+', label: 'قالب جاهز' },
   { value: '24/7', label: 'دعم فني' },
 ]

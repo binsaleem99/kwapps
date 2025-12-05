@@ -133,7 +133,7 @@ export function Features() {
               href="#pricing"
               className="px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
             >
-              ابدأ الآن
+              جرّب بدينار واحد
             </a>
           </div>
         </motion.div>

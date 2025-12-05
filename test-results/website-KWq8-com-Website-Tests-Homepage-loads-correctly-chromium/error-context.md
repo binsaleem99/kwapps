@@ -1,0 +1,363 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - link "KW KW APPS كي دبليو آبس" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e9]:
+            - img [ref=e10]
+            - generic [ref=e13]: KW
+          - generic [ref=e14]:
+            - generic [ref=e15]: KW APPS
+            - generic [ref=e16]: كي دبليو آبس
+        - navigation [ref=e17]:
+          - link "الرئيسية" [ref=e18] [cursor=pointer]:
+            - /url: /
+            - text: الرئيسية
+          - link "المزايا" [ref=e19] [cursor=pointer]:
+            - /url: "#features"
+            - text: المزايا
+          - link "الأسعار" [ref=e20] [cursor=pointer]:
+            - /url: /pricing
+            - text: الأسعار
+          - link "القوالب" [ref=e21] [cursor=pointer]:
+            - /url: /templates
+            - text: القوالب
+          - link "المدونة" [ref=e22] [cursor=pointer]:
+            - /url: /blog
+            - text: المدونة
+          - link "إنشاء تطبيق" [ref=e23] [cursor=pointer]:
+            - /url: /builder
+            - text: إنشاء تطبيق
+          - link "تسجيل الدخول" [ref=e24] [cursor=pointer]:
+            - /url: /sign-in
+          - link "ابدأ الآن" [ref=e25] [cursor=pointer]:
+            - /url: /sign-up
+    - main [ref=e26]:
+      - generic [ref=e31]:
+        - generic [ref=e32]:
+          - generic [ref=e33]:
+            - img [ref=e37]
+            - generic [ref=e40]: منصة عربية 100% • مدعومة بالذكاء الاصطناعي
+          - heading "أنشئ تطبيقك" [level=1] [ref=e41]:
+            - generic [ref=e42]: أنشئ
+            - generic [ref=e43]: تطبيقك
+          - paragraph [ref=e44]: بالذكاء الاصطناعي
+          - paragraph [ref=e45]: من الفكرة إلى التطبيق الكامل في دقائق. بدون كتابة سطر واحد من الكود
+          - generic [ref=e46]:
+            - link "ابدأ الآن" [ref=e47] [cursor=pointer]:
+              - /url: /signup
+              - img
+              - text: ابدأ الآن
+            - link "شاهد كيف يعمل" [ref=e48] [cursor=pointer]:
+              - /url: "#features"
+        - generic [ref=e50]:
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - img [ref=e55]
+              - generic [ref=e57]: مجاني للبدء
+            - generic [ref=e58]:
+              - img [ref=e60]
+              - generic [ref=e62]: بدون بطاقة ائتمانية
+            - generic [ref=e63]:
+              - img [ref=e65]
+              - generic [ref=e67]: نشر فوري على الإنترنت
+          - generic [ref=e68]:
+            - generic [ref=e69]: "+1000"
+            - paragraph [ref=e70]: تطبيق تم إنشاؤه بنجاح
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e79]: المزايا
+          - heading "كل ما تحتاجه في منصة واحدة" [level=2] [ref=e80]:
+            - generic [ref=e81]: كل ما تحتاجه
+            - generic [ref=e82]: في منصة واحدة
+          - paragraph [ref=e83]: ثلاثة أسباب تجعل KW APPS الخيار الأفضل لبناء تطبيقك القادم
+        - generic [ref=e84]:
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]: "01"
+              - img [ref=e92]
+            - generic [ref=e94]:
+              - heading "واجهة عربية كاملة" [level=3] [ref=e95]
+              - paragraph [ref=e96]: مصممة خصيصاً للمستخدم العربي. كل شيء بالعربية من اليمين لليسار - ليس مجرد ترجمة
+            - generic [ref=e97]:
+              - generic [ref=e98]: اعرف المزيد
+              - img [ref=e99]
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]: "02"
+              - img [ref=e108]
+            - generic [ref=e110]:
+              - heading "ذكاء اصطناعي متطور" [level=3] [ref=e111]
+              - paragraph [ref=e112]: فقط اكتب ما تريد بالعربية. نموذج AI يفهم السياق ويبني التطبيق بالكامل تلقائياً
+            - generic [ref=e113]:
+              - generic [ref=e114]: اعرف المزيد
+              - img [ref=e115]
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]: "03"
+              - img [ref=e124]
+            - generic [ref=e126]:
+              - heading "نشر بنقرة واحدة" [level=3] [ref=e127]
+              - paragraph [ref=e128]: تطبيقك جاهز للعالم في ثوانٍ. استضافة سريعة، نطاق مخصص، وSSL مجاني
+            - generic [ref=e129]:
+              - generic [ref=e130]: اعرف المزيد
+              - img [ref=e131]
+        - generic [ref=e134]:
+          - generic [ref=e135]: جاهز لتجربة القوة الكاملة؟
+          - link "ابدأ الآن" [ref=e136] [cursor=pointer]:
+            - /url: "#pricing"
+      - generic [ref=e138]:
+        - generic [ref=e139]:
+          - generic [ref=e141]: القوالب الجاهزة
+          - heading "ابدأ بقالب جاهز" [level=2] [ref=e142]
+          - paragraph [ref=e143]: اختر من بين قوالبنا الجاهزة وخصصها حسب احتياجاتك في دقائق
+        - generic [ref=e144]:
+          - generic [ref=e146]:
+            - img [ref=e148]
+            - generic [ref=e150]: تجارة إلكترونية
+            - heading "متجر إلكتروني" [level=3] [ref=e151]
+            - paragraph [ref=e152]: منصة تجارة إلكترونية كاملة مع إدارة المنتجات والطلبات والمدفوعات
+            - link "عرض القوالب" [ref=e153] [cursor=pointer]:
+              - /url: /templates
+          - generic [ref=e155]:
+            - img [ref=e157]
+            - generic [ref=e159]: خدمات
+            - heading "نظام حجوزات" [level=3] [ref=e160]
+            - paragraph [ref=e161]: تطبيق حجوزات احترافي للمواعيد والخدمات مع تقويم تفاعلي
+            - link "عرض القوالب" [ref=e162] [cursor=pointer]:
+              - /url: /templates
+          - generic [ref=e164]:
+            - img [ref=e166]
+            - generic [ref=e168]: تعليم
+            - heading "منصة تعليمية" [level=3] [ref=e169]
+            - paragraph [ref=e170]: نظام إدارة تعلم متكامل مع الدروس والاختبارات وتتبع التقدم
+            - link "عرض القوالب" [ref=e171] [cursor=pointer]:
+              - /url: /templates
+          - generic [ref=e173]:
+            - img [ref=e175]
+            - generic [ref=e177]: إنتاجية
+            - heading "إدارة مشاريع" [level=3] [ref=e178]
+            - paragraph [ref=e179]: أداة إدارة مشاريع ومهام مع لوحات كانبان وتقارير متقدمة
+            - link "عرض القوالب" [ref=e180] [cursor=pointer]:
+              - /url: /templates
+          - generic [ref=e182]:
+            - img [ref=e184]
+            - generic [ref=e186]: محتوى
+            - heading "مدونة احترافية" [level=3] [ref=e187]
+            - paragraph [ref=e188]: منصة نشر محتوى مع محرر نصوص غني وإدارة مقالات متقدمة
+            - link "عرض القوالب" [ref=e189] [cursor=pointer]:
+              - /url: /templates
+          - generic [ref=e191]:
+            - img [ref=e193]
+            - generic [ref=e195]: أعمال
+            - heading "نظام CRM" [level=3] [ref=e196]
+            - paragraph [ref=e197]: إدارة علاقات العملاء مع تتبع المبيعات والفرص التجارية
+            - link "عرض القوالب" [ref=e198] [cursor=pointer]:
+              - /url: /templates
+        - generic [ref=e199]:
+          - paragraph [ref=e200]: لا تجد ما تبحث عنه؟ أنشئ تطبيقك الخاص من الصفر
+          - link "ابدأ من الصفر" [ref=e201] [cursor=pointer]:
+            - /url: /signup
+            - text: ابدأ من الصفر
+            - img
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e210]: الأسعار
+          - heading "خطط واضحة أسعار عادلة" [level=2] [ref=e211]:
+            - generic [ref=e212]: خطط واضحة
+            - generic [ref=e213]: أسعار عادلة
+          - paragraph [ref=e214]: جرب خطة المطور بدينار واحد لأسبوع كامل. بدون مفاجآت
+        - generic [ref=e215]:
+          - generic [ref=e217]:
+            - generic [ref=e218]: 🎯 جرب أسبوع كامل بدينار واحد فقط
+            - generic [ref=e219]:
+              - generic [ref=e220]:
+                - generic [ref=e221]: DEVELOPER
+                - heading "المطور" [level=3] [ref=e222]
+                - paragraph [ref=e223]: للمطورين المستقلين
+              - generic [ref=e224]:
+                - generic [ref=e225]:
+                  - generic [ref=e226]: "27"
+                  - generic [ref=e227]: د.ك
+                - generic [ref=e228]: شهرياً
+              - list [ref=e229]:
+                - listitem [ref=e230]:
+                  - img [ref=e232]
+                  - generic [ref=e234]: 10 مشاريع
+                - listitem [ref=e235]:
+                  - img [ref=e237]
+                  - generic [ref=e239]: 50 طلبات AI يومياً
+                - listitem [ref=e240]:
+                  - img [ref=e242]
+                  - generic [ref=e244]: تصدير الكود
+                - listitem [ref=e245]:
+                  - img [ref=e247]
+                  - generic [ref=e249]: دعم عبر البريد
+                - listitem [ref=e250]:
+                  - img [ref=e252]
+                  - generic [ref=e254]: 500MB تخزين
+              - link "جرب بدينار واحد" [ref=e255] [cursor=pointer]:
+                - /url: /signup?plan=developer
+          - generic [ref=e258]:
+            - generic [ref=e259]:
+              - generic [ref=e260]: PROFESSIONAL
+              - heading "الاحترافي" [level=3] [ref=e261]
+              - paragraph [ref=e262]: للفرق الصغيرة
+            - generic [ref=e263]:
+              - generic [ref=e264]:
+                - generic [ref=e265]: "39"
+                - generic [ref=e266]: د.ك
+              - generic [ref=e267]: شهرياً
+            - list [ref=e268]:
+              - listitem [ref=e269]:
+                - img [ref=e271]
+                - generic [ref=e273]: 25 مشروع
+              - listitem [ref=e274]:
+                - img [ref=e276]
+                - generic [ref=e278]: 100 طلبات AI يومياً
+              - listitem [ref=e279]:
+                - img [ref=e281]
+                - generic [ref=e283]: تصدير الكود
+              - listitem [ref=e284]:
+                - img [ref=e286]
+                - generic [ref=e288]: دعم ذو أولوية
+              - listitem [ref=e289]:
+                - img [ref=e291]
+                - generic [ref=e293]: 2GB تخزين
+              - listitem [ref=e294]:
+                - img [ref=e296]
+                - generic [ref=e298]: تحليلات متقدمة
+            - link "ابدأ الآن" [ref=e299] [cursor=pointer]:
+              - /url: /signup?plan=professional
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - generic [ref=e304]: AGENCY
+              - heading "الوكالات" [level=3] [ref=e305]
+              - paragraph [ref=e306]: للشركات والوكالات
+            - generic [ref=e307]:
+              - generic [ref=e308]:
+                - generic [ref=e309]: "75"
+                - generic [ref=e310]: د.ك
+              - generic [ref=e311]: شهرياً
+            - list [ref=e312]:
+              - listitem [ref=e313]:
+                - img [ref=e315]
+                - generic [ref=e317]: مشاريع غير محدودة
+              - listitem [ref=e318]:
+                - img [ref=e320]
+                - generic [ref=e322]: طلبات AI غير محدودة
+              - listitem [ref=e323]:
+                - img [ref=e325]
+                - generic [ref=e327]: نشر فوري
+              - listitem [ref=e328]:
+                - img [ref=e330]
+                - generic [ref=e332]: دعم مباشر 24/7
+              - listitem [ref=e333]:
+                - img [ref=e335]
+                - generic [ref=e337]: 10GB تخزين
+              - listitem [ref=e338]:
+                - img [ref=e340]
+                - generic [ref=e342]: White Label
+            - link "تواصل معنا" [ref=e343] [cursor=pointer]:
+              - /url: /signup?plan=agency
+        - generic [ref=e345]:
+          - img [ref=e346]
+          - generic [ref=e348]: "استضافة التطبيقات: 5 د.ك/شهرياً لكل تطبيق"
+    - contentinfo [ref=e349]:
+      - generic [ref=e353]:
+        - generic [ref=e354]:
+          - generic [ref=e355]:
+            - generic [ref=e356]:
+              - generic [ref=e359]: KW
+              - generic [ref=e360]: KW APPS
+            - paragraph [ref=e361]: منصة عربية لبناء التطبيقات بالذكاء الاصطناعي. من الفكرة إلى التطبيق في دقائق
+          - generic [ref=e362]:
+            - heading "المنتج" [level=3] [ref=e363]
+            - list [ref=e364]:
+              - listitem [ref=e365]:
+                - link "إنشاء تطبيق" [ref=e366] [cursor=pointer]:
+                  - /url: /builder
+              - listitem [ref=e367]:
+                - link "المزايا" [ref=e368] [cursor=pointer]:
+                  - /url: "#features"
+              - listitem [ref=e369]:
+                - link "الأسعار" [ref=e370] [cursor=pointer]:
+                  - /url: /pricing
+              - listitem [ref=e371]:
+                - link "المدونة" [ref=e372] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e373]:
+                - link "القوالب" [ref=e374] [cursor=pointer]:
+                  - /url: "#templates"
+          - generic [ref=e375]:
+            - heading "الشركة" [level=3] [ref=e376]
+            - list [ref=e377]:
+              - listitem [ref=e378]:
+                - link "من نحن" [ref=e379] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e380]:
+                - link "اتصل بنا" [ref=e381] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e382]:
+                - link "سياسة الخصوصية" [ref=e383] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=e384]:
+                - link "الشروط والأحكام" [ref=e385] [cursor=pointer]:
+                  - /url: /terms
+          - generic [ref=e386]:
+            - heading "الدعم" [level=3] [ref=e387]
+            - list [ref=e388]:
+              - listitem [ref=e389]:
+                - link "مركز المساعدة" [ref=e390] [cursor=pointer]:
+                  - /url: /help
+              - listitem [ref=e391]:
+                - link "الدروس التعليمية" [ref=e392] [cursor=pointer]:
+                  - /url: /tutorials
+              - listitem [ref=e393]:
+                - link "المجتمع" [ref=e394] [cursor=pointer]:
+                  - /url: /community
+              - listitem [ref=e395]:
+                - link "حالة النظام" [ref=e396] [cursor=pointer]:
+                  - /url: /status
+        - generic [ref=e397]:
+          - paragraph [ref=e398]: 2025 KW APPS. جميع الحقوق محفوظة
+          - generic [ref=e399]:
+            - link [ref=e400] [cursor=pointer]:
+              - /url: https://twitter.com/kwapps
+              - img [ref=e401]
+            - link [ref=e403] [cursor=pointer]:
+              - /url: https://github.com/kwapps
+              - img [ref=e404]
+  - alert [ref=e406]
+  - generic [ref=e409]:
+    - img [ref=e412]
+    - generic [ref=e414]:
+      - heading "🍪 نستخدم ملفات تعريف الارتباط" [level=3] [ref=e415]
+      - paragraph [ref=e416]:
+        - text: نستخدم ملفات تعريف الارتباط (Cookies) لتحسين تجربتك على موقعنا، وتذكر تفضيلاتك، وتحليل حركة المرور. من خلال الاستمرار في استخدام هذا الموقع، فإنك توافق على استخدامنا لملفات تعريف الارتباط وفقاً لـ
+        - link "سياسة الخصوصية" [ref=e417] [cursor=pointer]:
+          - /url: /privacy
+        - text: .
+      - generic [ref=e418]:
+        - generic [ref=e419]:
+          - strong [ref=e420]: ضرورية
+          - paragraph [ref=e421]: للأمان وتسجيل الدخول
+        - generic [ref=e422]:
+          - strong [ref=e423]: وظيفية
+          - paragraph [ref=e424]: لحفظ التفضيلات
+        - generic [ref=e425]:
+          - strong [ref=e426]: تحليلية
+          - paragraph [ref=e427]: لفهم كيفية الاستخدام
+      - generic [ref=e428]:
+        - button "قبول جميع ملفات الكوكيز" [ref=e429]
+        - button "الضرورية فقط" [ref=e430]
+        - link "اعرف المزيد" [ref=e431] [cursor=pointer]:
+          - /url: /privacy
+          - button "اعرف المزيد" [ref=e432]
+    - button "إغلاق" [ref=e433]:
+      - img [ref=e434]
+```

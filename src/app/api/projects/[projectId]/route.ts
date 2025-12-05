@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 /**
- * GET /api/projects/[id]
+ * GET /api/projects/[projectId]
  * Get a single project by ID
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const { id: projectId } = await params
+    const { projectId } = await params
 
     // Authenticate user
     const {
@@ -54,7 +54,7 @@ export async function GET(
       project,
     })
   } catch (error: any) {
-    console.error('Error in GET /api/projects/[id]:', error)
+    console.error('Error in GET /api/projects/[projectId]:', error)
     return NextResponse.json(
       {
         error: 'حدث خطأ أثناء جلب المشروع',
@@ -67,16 +67,16 @@ export async function GET(
 }
 
 /**
- * PATCH /api/projects/[id]
+ * PATCH /api/projects/[projectId]
  * Update a project
  */
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const { id: projectId } = await params
+    const { projectId } = await params
 
     // Authenticate user
     const {
@@ -148,7 +148,7 @@ export async function PATCH(
       project,
     })
   } catch (error: any) {
-    console.error('Error in PATCH /api/projects/[id]:', error)
+    console.error('Error in PATCH /api/projects/[projectId]:', error)
     return NextResponse.json(
       {
         error: 'حدث خطأ أثناء تحديث المشروع',
@@ -161,16 +161,16 @@ export async function PATCH(
 }
 
 /**
- * DELETE /api/projects/[id]
+ * DELETE /api/projects/[projectId]
  * Delete a project
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const { id: projectId } = await params
+    const { projectId } = await params
 
     // Authenticate user
     const {
@@ -228,7 +228,7 @@ export async function DELETE(
       message: 'تم حذف المشروع بنجاح',
     })
   } catch (error: any) {
-    console.error('Error in DELETE /api/projects/[id]:', error)
+    console.error('Error in DELETE /api/projects/[projectId]:', error)
     return NextResponse.json(
       {
         error: 'حدث خطأ أثناء حذف المشروع',

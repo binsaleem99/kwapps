@@ -1,70 +1,144 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import type { SubscriptionTierName } from "@/types/billing";
 
 const plans = [
   {
-    name: "المطور",
-    nameEn: "DEVELOPER",
-    price: "27",
+    name: "أساسي",
+    nameEn: "BASIC",
+    tierName: "basic" as SubscriptionTierName,
+    price: "23",
     period: "شهرياً",
     description: "للمطورين المستقلين",
     hasTrial: true,
     trialPrice: "1",
     features: [
-      "10 مشاريع",
-      "50 طلبات AI يومياً",
+      "100 رصيد شهرياً",
+      "5 رصيد يومي إضافي",
       "تصدير الكود",
       "دعم عبر البريد",
-      "500MB تخزين",
+      "معاينة مباشرة",
     ],
     cta: "جرب بدينار واحد",
-    href: "/signup?plan=developer",
     highlighted: true,
   },
   {
-    name: "الاحترافي",
-    nameEn: "PROFESSIONAL",
-    price: "39",
+    name: "احترافي",
+    nameEn: "PRO",
+    tierName: "pro" as SubscriptionTierName,
+    price: "38",
     period: "شهرياً",
     description: "للفرق الصغيرة",
     hasTrial: false,
     features: [
-      "25 مشروع",
-      "100 طلبات AI يومياً",
+      "200 رصيد شهرياً",
+      "8 رصيد يومي إضافي",
       "تصدير الكود",
       "دعم ذو أولوية",
-      "2GB تخزين",
+      "نشر على Vercel",
       "تحليلات متقدمة",
     ],
-    cta: "ابدأ الآن",
-    href: "/signup?plan=professional",
+    cta: "اشترك الآن",
     highlighted: false,
   },
   {
-    name: "الوكالات",
-    nameEn: "AGENCY",
+    name: "مميز",
+    nameEn: "PREMIUM",
+    tierName: "premium" as SubscriptionTierName,
+    price: "59",
+    period: "شهرياً",
+    description: "للمحترفين",
+    hasTrial: false,
+    features: [
+      "350 رصيد شهرياً",
+      "12 رصيد يومي إضافي",
+      "توليد صور AI",
+      "نطاق مخصص",
+      "دعم مباشر",
+      "أولوية في الطلبات",
+    ],
+    cta: "اشترك الآن",
+    highlighted: false,
+  },
+  {
+    name: "مؤسسي",
+    nameEn: "ENTERPRISE",
+    tierName: "enterprise" as SubscriptionTierName,
     price: "75",
     period: "شهرياً",
     description: "للشركات والوكالات",
     hasTrial: false,
     features: [
-      "مشاريع غير محدودة",
-      "طلبات AI غير محدودة",
-      "نشر فوري",
-      "دعم مباشر 24/7",
-      "10GB تخزين",
+      "500 رصيد شهرياً",
+      "15 رصيد يومي إضافي",
+      "توليد صور AI",
+      "دعم 24/7",
       "White Label",
+      "API مخصص",
     ],
     cta: "تواصل معنا",
-    href: "/signup?plan=agency",
     highlighted: false,
   },
 ];
 
 export function Pricing() {
+  const router = useRouter();
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubscribe = async (tierName: SubscriptionTierName, isTrial: boolean = false) => {
+    setLoadingTier(tierName);
+    setError(null);
+
+    try {
+      // Check if user is authenticated
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        // Redirect to sign-in with return URL to pricing
+        router.push(`/sign-in?redirect=/pricing&tier=${tierName}&trial=${isTrial}`);
+        return;
+      }
+
+      // Call checkout API
+      const response = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tier_name: tierName,
+          is_trial: isTrial,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.error_en || 'فشل إنشاء جلسة الدفع');
+      }
+
+      // Redirect to UPayments payment page
+      if (data.payment_link) {
+        window.location.href = data.payment_link;
+      } else {
+        throw new Error('لم يتم استلام رابط الدفع');
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      setError(err.message || 'حدث خطأ أثناء الاشتراك');
+    } finally {
+      setLoadingTier(null);
+    }
+  };
+
   return (
     <section id="pricing" className="relative py-40 overflow-hidden bg-gradient-to-b from-slate-50 to-white">
       {/* Dramatic background gradients */}
@@ -92,12 +166,19 @@ export function Pricing() {
             </span>
           </h2>
           <p className="text-2xl font-extrabold text-slate-600 leading-relaxed">
-            جرب خطة المطور بدينار واحد لأسبوع كامل. بدون مفاجآت
+            جرب الخطة الأساسية بدينار واحد لأسبوع كامل. بدون مفاجآت
           </p>
+
+          {/* Error message */}
+          {error && (
+            <div className="mt-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-bold">
+              {error}
+            </div>
+          )}
         </motion.div>
 
         {/* Pricing Grid - BOLD CARDS with dark highlighted plan */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto mb-20">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-20">
           {plans.map((plan, index) => (
             <motion.div
               key={plan.nameEn}
@@ -180,14 +261,22 @@ export function Pricing() {
                   {/* CTA Button */}
                   <Button
                     size="lg"
+                    onClick={() => handleSubscribe(plan.tierName, plan.hasTrial)}
+                    disabled={loadingTier !== null}
                     className={`w-full text-lg font-black py-6 transition-all duration-300 ${
                       plan.highlighted
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-glow-lg hover:shadow-electric hover:scale-105"
                         : "bg-white border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white hover:scale-105"
-                    }`}
-                    asChild
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    <Link href={plan.href}>{plan.cta}</Link>
+                    {loadingTier === plan.tierName ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        جاري التحميل...
+                      </span>
+                    ) : (
+                      plan.cta
+                    )}
                   </Button>
                 </div>
               </div>

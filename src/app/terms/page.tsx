@@ -22,8 +22,8 @@ export default function TermsOfServicePage() {
           </h1>
           <p className="text-gray-600 mb-4">
             {language === 'ar'
-              ? 'آخر تحديث: ديسمبر 2024'
-              : 'Last updated: December 2024'}
+              ? 'آخر تحديث: ديسمبر 2025'
+              : 'Last updated: December 2025'}
           </p>
 
           {/* Language Toggle */}
@@ -64,7 +64,7 @@ export default function TermsOfServicePage() {
                 <li>أدوات توليد الكود باستخدام الذكاء الاصطناعي</li>
                 <li>قوالب جاهزة للتطبيقات</li>
                 <li>نشر تلقائي على GitHub و Vercel</li>
-                <li>خطط اشتراك متعددة (مجاني، بناء، احترافي)</li>
+                <li>خطط اشتراك متعددة (أساسي، احترافي، مميز، مؤسسي)</li>
               </ul>
 
               <h2 className="text-2xl font-bold mb-4 mt-8">3. التسجيل والحساب</h2>
@@ -84,10 +84,11 @@ export default function TermsOfServicePage() {
               <h2 className="text-2xl font-bold mb-4 mt-8">4. خطط الاشتراك والدفع</h2>
               <h3 className="text-xl font-semibold mb-3">4.1 الخطط المتاحة</h3>
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
-                <li><strong>مجاني:</strong> 0 د.ك - 3 طلبات يومياً، 1 مشروع، 100MB تخزين</li>
-                <li><strong>بناء:</strong> 33 د.ك شهرياً - 30 طلب يومياً، 10 مشاريع، 1GB تخزين</li>
-                <li><strong>احترافي:</strong> 59 د.ك شهرياً - 100 طلب يومياً، 100 مشروع، 10GB تخزين</li>
-                <li><strong>استضافة فقط:</strong> 5 د.ك شهرياً - استضافة المشاريع الحالية بدون مشاريع جديدة</li>
+                <li><strong>تجربة:</strong> 1 د.ك/أسبوع - فترة تجريبية للخطة الأساسية</li>
+                <li><strong>أساسي:</strong> 23 د.ك شهرياً - 30 طلب يومياً، 3 مشاريع، 500MB تخزين</li>
+                <li><strong>احترافي:</strong> 38 د.ك شهرياً - 100 طلب يومياً، 10 مشاريع، 2GB تخزين</li>
+                <li><strong>مميز:</strong> 59 د.ك شهرياً - 300 طلب يومياً، 50 مشروع، 10GB تخزين</li>
+                <li><strong>مؤسسي:</strong> 75 د.ك شهرياً - طلبات غير محدودة، مشاريع غير محدودة، 50GB تخزين</li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">4.2 معالجة الدفع</h3>
@@ -216,7 +217,7 @@ export default function TermsOfServicePage() {
                 <li>AI code generation tools</li>
                 <li>Ready-made application templates</li>
                 <li>Automatic deployment to GitHub and Vercel</li>
-                <li>Multiple subscription plans (Free, Builder, Pro)</li>
+                <li>Multiple subscription plans (Basic, Pro, Premium, Enterprise)</li>
               </ul>
 
               <h2 className="text-2xl font-bold mb-4 mt-8">3. Registration and Account</h2>
@@ -236,10 +237,11 @@ export default function TermsOfServicePage() {
               <h2 className="text-2xl font-bold mb-4 mt-8">4. Subscription Plans and Payment</h2>
               <h3 className="text-xl font-semibold mb-3">4.1 Available Plans</h3>
               <ul className="list-disc list-inside mb-4 text-gray-700 space-y-2">
-                <li><strong>Free:</strong> 0 KWD - 3 daily requests, 1 project, 100MB storage</li>
-                <li><strong>Builder:</strong> 33 KWD/month - 30 daily requests, 10 projects, 1GB storage</li>
-                <li><strong>Pro:</strong> 59 KWD/month - 100 daily requests, 100 projects, 10GB storage</li>
-                <li><strong>Hosting Only:</strong> 5 KWD/month - Host existing projects without new projects</li>
+                <li><strong>Trial:</strong> 1 KWD/week - Trial period for Basic plan</li>
+                <li><strong>Basic:</strong> 23 KWD/month - 30 daily requests, 3 projects, 500MB storage</li>
+                <li><strong>Pro:</strong> 38 KWD/month - 100 daily requests, 10 projects, 2GB storage</li>
+                <li><strong>Premium:</strong> 59 KWD/month - 300 daily requests, 50 projects, 10GB storage</li>
+                <li><strong>Enterprise:</strong> 75 KWD/month - Unlimited requests, unlimited projects, 50GB storage</li>
               </ul>
 
               <h3 className="text-xl font-semibold mb-3">4.2 Payment Processing</h3>

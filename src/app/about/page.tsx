@@ -156,9 +156,9 @@ export default function AboutPage() {
             <p className="text-blue-100 mb-6 font-['Cairo']">
               انضم إلى آلاف المستخدمين الذين يبنون تطبيقاتهم مع KW APPS
             </p>
-            <Link href="/sign-up">
+            <Link href="/sign-up?tier=basic&trial=true">
               <Button size="lg" variant="secondary" className="font-['Cairo'] font-bold">
-                ابدأ الآن
+                جرّب أسبوع بدينار
               </Button>
             </Link>
           </div>

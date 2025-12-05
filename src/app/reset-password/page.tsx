@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth/translate-error'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,7 +34,7 @@ export default function ResetPasswordPage() {
       setSuccess(true)
     } catch (err: any) {
       console.error('Password reset error:', err)
-      setError(err.message || 'حدث خطأ أثناء إرسال رابط إعادة التعيين')
+      setError(translateAuthError(err.message || ''))
     } finally {
       setLoading(false)
     }

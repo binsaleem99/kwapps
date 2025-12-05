@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Cairo } from "next/font/google";
 import { CookieConsent } from "@/components/legal/cookie-consent";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 
 // Cairo: Modern, bold Arabic font with character
 const cairo = Cairo({
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="ar" dir="rtl" className={cairo.variable}>
       <body className="bg-white text-slate-900 font-sans antialiased">
         {children}
+        <WhatsAppButton />
         <CookieConsent />
       </body>
     </html>

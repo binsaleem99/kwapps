@@ -22,7 +22,7 @@ import type { TrialTimelineStep } from '@/types/paywall';
 const TIMELINE: TrialTimelineStep[] = [
   {
     day: 0,
-    label_ar: 'اليوم: ابدأ تجربتك المجانية',
+    label_ar: 'اليوم: ابدأ تجربتك بدينار واحد',
     icon: 'Gift',
   },
   {
@@ -32,7 +32,7 @@ const TIMELINE: TrialTimelineStep[] = [
   },
   {
     day: 5,
-    label_ar: 'اليوم 5: تذكير بانتهاء التجربة المجانية',
+    label_ar: 'اليوم 5: تذكير بانتهاء فترة التجربة',
     icon: 'Bell',
     is_payment_reminder: false,
   },
@@ -80,11 +80,11 @@ export function TrialTimelineStepComponent({
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2 font-cairo">
-              تجربة مجانية لمدة 7 أيام
+              جرّب أسبوع كامل بدينار واحد
             </h1>
 
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 font-cairo">
-              جرّب كل شيء <span className="font-bold text-blue-600 dark:text-blue-400">مجاناً</span> قبل أن تدفع
+              وصول كامل لكل الميزات <span className="font-bold text-blue-600 dark:text-blue-400">بـ 1 د.ك فقط</span>
             </p>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function TrialTimelineStepComponent({
                 <Check className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white font-cairo">
-                ماذا تحصل خلال التجربة المجانية؟
+                ماذا تحصل خلال فترة التجربة؟
               </h3>
             </div>
 
@@ -212,7 +212,7 @@ export function TrialTimelineStepComponent({
                   ضمان استرجاع كامل
                 </h4>
                 <p className="text-sm text-green-800 dark:text-green-200 font-cairo">
-                  إذا لم تكن راضياً خلال التجربة المجانية، ألغِ بدون أي رسوم
+                  إذا لم تكن راضياً خلال فترة التجربة، ألغِ قبل التجديد
                 </p>
               </div>
             </div>
@@ -227,7 +227,7 @@ export function TrialTimelineStepComponent({
             onClick={onNext}
             className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all font-cairo group"
           >
-            <span>ابدأ التجربة المجانية الآن</span>
+            <span>ابدأ التجربة بدينار واحد</span>
             <ArrowRight className="w-5 h-5 mr-2 group-hover:translate-x-1 transition-transform" />
           </Button>
 

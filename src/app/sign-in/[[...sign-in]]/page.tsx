@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth/translate-error'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,12 +12,26 @@ import { Sparkles, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function SignInPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isLoaded, setIsLoaded] = useState(true)
+
+  // Get redirect params for checkout flow
+  const redirectUrl = searchParams.get('redirect')
+  const tierParam = searchParams.get('tier')
+  const trialParam = searchParams.get('trial')
+  const errorParam = searchParams.get('error')
+
+  // Handle OAuth error from callback
+  useEffect(() => {
+    if (errorParam === 'oauth_failed') {
+      setError(translateAuthError('oauth_failed'))
+    }
+  }, [errorParam])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -34,11 +49,18 @@ export default function SignInPage() {
 
       if (signInError) throw signInError
 
-      router.push('/dashboard')
+      // Redirect based on checkout params or default to dashboard
+      if (tierParam) {
+        // Redirect to checkout page which handles payment with established session
+        router.push(`/checkout?tier=${tierParam}&trial=${trialParam || 'false'}`)
+      } else {
+        router.push(redirectUrl || '/dashboard')
+      }
       router.refresh()
     } catch (err: any) {
       console.error('Sign in error:', err)
-      setError(err.message || 'البريد الإلكتروني أو كلمة المرور غير صحيحة')
+      const translatedError = translateAuthError(err.message || '')
+      setError(translatedError)
     } finally {
       setLoading(false)
     }
@@ -47,17 +69,24 @@ export default function SignInPage() {
   const handleGoogleSignIn = async () => {
     setLoading(true)
     try {
+      // Include tier info in callback URL for checkout after OAuth
+      let callbackUrl = `${window.location.origin}/auth/callback`
+      if (tierParam) {
+        callbackUrl += `?tier=${tierParam}&trial=${trialParam || 'false'}`
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
         },
       })
 
       if (error) throw error
     } catch (err: any) {
       console.error('Google sign in error:', err)
-      setError('فشل تسجيل الدخول بواسطة Google')
+      const translatedError = translateAuthError(err.message || '')
+      setError(translatedError || 'فشل تسجيل الدخول بواسطة Google')
       setLoading(false)
     }
   }
@@ -82,6 +111,12 @@ export default function SignInPage() {
           <p className="text-slate-600 font-['Cairo']">
             سجل الدخول للمتابعة إلى لوحة التحكم
           </p>
+          {/* Trial Badge - Show when coming from trial flow */}
+          {trialParam === 'true' && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-100 border-2 border-green-500 rounded-full">
+              <span className="text-green-700 font-bold font-['Cairo']">🎉 تجربة أسبوع بدينار واحد فقط!</span>
+            </div>
+          )}
         </div>
 
         {/* Sign In Form */}
@@ -108,6 +143,7 @@ export default function SignInPage() {
                   placeholder="بريدك@example.com"
                   required
                   disabled={loading}
+                  autoComplete="email"
                   className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                 />
               </div>
@@ -127,6 +163,7 @@ export default function SignInPage() {
                   placeholder="أدخل كلمة المرور"
                   required
                   disabled={loading}
+                  autoComplete="current-password"
                   className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                 />
               </div>
@@ -202,12 +239,12 @@ export default function SignInPage() {
             )}
           </Button>
 
-          {/* Sign Up Link */}
+          {/* Sign Up Link - Preserve query params for trial flow */}
           <div className="mt-6 text-center">
             <p className="text-slate-600 font-['Cairo']">
               ليس لديك حساب؟{' '}
               <Link
-                href="/sign-up"
+                href={`/sign-up${tierParam ? `?tier=${tierParam}&trial=${trialParam || 'false'}` : ''}`}
                 className="text-blue-600 hover:text-blue-700 font-black"
               >
                 أنشئ حساباً جديداً

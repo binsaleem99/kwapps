@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth/translate-error'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,7 @@ import { Sparkles, Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react'
 
 export default function SignUpPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -19,6 +21,10 @@ export default function SignUpPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [isLoaded, setIsLoaded] = useState(true)
+
+  // Get checkout params for trial flow
+  const tierParam = searchParams.get('tier')
+  const trialParam = searchParams.get('trial')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,11 +46,17 @@ export default function SignUpPage() {
     setError('')
 
     try {
+      // Build callback URL with tier/trial params for checkout after email verification
+      let callbackUrl = `${window.location.origin}/auth/callback`
+      if (tierParam) {
+        callbackUrl += `?tier=${tierParam}&trial=${trialParam || 'false'}`
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callbackUrl,
           data: {
             full_name: name,
             display_name: name,
@@ -54,12 +66,16 @@ export default function SignUpPage() {
 
       if (signUpError) throw signUpError
 
-      // Show success message
+      // Show success message and redirect to sign-in with preserved params
       alert('تم إرسال رسالة تأكيد إلى بريدك الإلكتروني')
-      router.push('/sign-in')
+      const signInUrl = tierParam
+        ? `/sign-in?tier=${tierParam}&trial=${trialParam || 'false'}`
+        : '/sign-in'
+      router.push(signInUrl)
     } catch (err: any) {
       console.error('Sign up error:', err)
-      setError(err.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.')
+      const translatedError = translateAuthError(err.message || '')
+      setError(translatedError)
     } finally {
       setLoading(false)
     }
@@ -68,17 +84,24 @@ export default function SignUpPage() {
   const handleGoogleSignUp = async () => {
     setLoading(true)
     try {
+      // Include tier info in callback URL for checkout after OAuth
+      let callbackUrl = `${window.location.origin}/auth/callback`
+      if (tierParam) {
+        callbackUrl += `?tier=${tierParam}&trial=${trialParam || 'false'}`
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: callbackUrl,
         },
       })
 
       if (error) throw error
     } catch (err: any) {
       console.error('Google sign up error:', err)
-      setError('فشل التسجيل بواسطة Google')
+      const translatedError = translateAuthError(err.message || '')
+      setError(translatedError || 'فشل التسجيل بواسطة Google')
       setLoading(false)
     }
   }
@@ -103,6 +126,12 @@ export default function SignUpPage() {
           <p className="text-slate-600 font-['Cairo']">
             ابدأ رحلتك مع KW APPS اليوم
           </p>
+          {/* Trial Badge - Show when coming from trial flow */}
+          {trialParam === 'true' && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-100 border-2 border-green-500 rounded-full">
+              <span className="text-green-700 font-bold font-['Cairo']">🎉 تجربة أسبوع بدينار واحد فقط!</span>
+            </div>
+          )}
         </div>
 
         {/* Sign Up Form */}
@@ -129,6 +158,7 @@ export default function SignUpPage() {
                       placeholder="أحمد محمد"
                       required
                       disabled={loading}
+                      autoComplete="name"
                       className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
@@ -148,6 +178,7 @@ export default function SignUpPage() {
                       placeholder="بريدك@example.com"
                       required
                       disabled={loading}
+                      autoComplete="email"
                       className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
@@ -168,6 +199,7 @@ export default function SignUpPage() {
                       required
                       minLength={8}
                       disabled={loading}
+                      autoComplete="new-password"
                       className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
@@ -191,6 +223,7 @@ export default function SignUpPage() {
                       required
                       minLength={8}
                       disabled={loading}
+                      autoComplete="new-password"
                       className="pr-10 h-12 border-2 border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl font-['Cairo'] transition-all"
                     />
                   </div>
@@ -257,12 +290,12 @@ export default function SignUpPage() {
                 )}
               </Button>
 
-              {/* Sign In Link */}
+              {/* Sign In Link - Preserve query params for trial flow */}
               <div className="mt-6 text-center">
                 <p className="text-slate-600 font-['Cairo']">
                   لديك حساب بالفعل؟{' '}
                   <Link
-                    href="/sign-in"
+                    href={`/sign-in${tierParam ? `?tier=${tierParam}&trial=${trialParam || 'false'}` : ''}`}
                     className="text-blue-600 hover:text-blue-700 font-black"
                   >
                     تسجيل الدخول

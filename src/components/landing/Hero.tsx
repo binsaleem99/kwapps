@@ -92,9 +92,9 @@ export function Hero() {
                 className="group relative px-12 py-7 text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white shadow-glow-lg hover:shadow-glow-xl hover:scale-105 transition-all duration-300 border-0"
                 asChild
               >
-                <Link href="/sign-up">
+                <Link href="/sign-up?tier=basic&trial=true">
                   <ArrowLeft className="ml-3 h-6 w-6 transition-transform group-hover:-translate-x-2" />
-                  ابدأ الآن
+                  جرّب أسبوع بدينار
                 </Link>
               </Button>
 
@@ -125,7 +125,7 @@ export function Hero() {
                       <Check className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-lg font-extrabold text-slate-900">
-                      مجاني للبدء
+                      جرّب بـ 1 د.ك فقط
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -133,7 +133,7 @@ export function Hero() {
                       <Check className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-lg font-extrabold text-slate-900">
-                      بدون بطاقة ائتمانية
+                      K-Net وبطاقات معتمدة
                     </span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -147,13 +147,13 @@ export function Hero() {
                 </div>
               </div>
 
-              {/* Stats card */}
+              {/* Early Adopters card - honest messaging for pre-launch */}
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 shadow-glow-lg text-white">
-                <div className="text-6xl font-black mb-2 text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400">
-                  +1000
+                <div className="text-4xl font-black mb-2 text-gradient bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400">
+                  🚀 انضم الآن
                 </div>
                 <p className="text-lg font-bold text-slate-300">
-                  تطبيق تم إنشاؤه بنجاح
+                  كن من المستخدمين الأوائل
                 </p>
               </div>
             </motion.div>

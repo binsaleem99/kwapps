@@ -7,6 +7,21 @@ import { Footer } from '@/components/landing/Footer'
 export const metadata: Metadata = {
   title: 'قوالب التطبيقات | KW APPS',
   description: 'تصفح مجموعتنا من قوالب التطبيقات الجاهزة وابدأ مشروعك في دقائق',
+  openGraph: {
+    title: 'قوالب التطبيقات | KW APPS',
+    description: 'اختر من بين قوالبنا الاحترافية الجاهزة وابدأ مشروعك في دقائق',
+    url: 'https://kwq8.com/templates',
+    siteName: 'KW APPS',
+    locale: 'ar_KW',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'KW APPS Templates' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'قوالب التطبيقات | KW APPS',
+    description: 'اختر من بين قوالبنا الاحترافية الجاهزة وابدأ مشروعك في دقائق',
+    images: ['/og-image.png'],
+  },
 }
 
 export const revalidate = 3600 // Revalidate every hour

@@ -8,6 +8,21 @@ import { Calendar, Eye, ArrowRight, ArrowLeft } from 'lucide-react'
 export const metadata: Metadata = {
   title: 'المدونة | KW APPS',
   description: 'مقالات وأخبار حول إنشاء المواقع بالذكاء الاصطناعي',
+  openGraph: {
+    title: 'المدونة | KW APPS',
+    description: 'مقالات وأخبار حول إنشاء المواقع بالذكاء الاصطناعي',
+    url: 'https://kwq8.com/blog',
+    siteName: 'KW APPS',
+    locale: 'ar_KW',
+    type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'KW APPS Blog' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'المدونة | KW APPS',
+    description: 'مقالات وأخبار حول إنشاء المواقع بالذكاء الاصطناعي',
+    images: ['/og-image.png'],
+  },
 }
 
 export default async function BlogPage() {
@@ -59,13 +74,31 @@ export default async function BlogPage() {
       <section className="pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           {!posts || posts.length === 0 ? (
-            <div className="text-center py-20">
-              <h2 className="text-2xl font-bold text-gray-400 mb-4 font-['Cairo']">
-                لا توجد مقالات بعد
+            <div className="text-center py-20 max-w-xl mx-auto">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Calendar className="w-10 h-10 text-blue-600" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-4 font-['Cairo']">
+                المدونة قادمة قريباً
               </h2>
-              <p className="text-gray-500 font-['Cairo']">
-                ترقبوا المحتوى الجديد قريباً!
+              <p className="text-gray-600 mb-8 font-['Cairo'] text-lg leading-relaxed">
+                نعمل على إعداد محتوى قيّم لمساعدتك في رحلة بناء تطبيقاتك.
+                اشترك في النشرة البريدية لتكون أول من يعرف عند نشر المقالات!
               </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <a
+                  href="/"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors font-['Cairo']"
+                >
+                  العودة للرئيسية
+                </a>
+                <a
+                  href="/tutorials"
+                  className="px-6 py-3 bg-slate-100 text-slate-900 rounded-xl font-bold hover:bg-slate-200 transition-colors font-['Cairo']"
+                >
+                  تصفح الدروس التعليمية
+                </a>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

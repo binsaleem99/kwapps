@@ -158,7 +158,7 @@ export function Header() {
                   className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
                   asChild
                 >
-                  <Link href="/sign-up">ابدأ الآن</Link>
+                  <Link href="/sign-up?tier=basic&trial=true">جرّب بدينار</Link>
                 </Button>
               </>
             )}
@@ -266,8 +266,8 @@ export function Header() {
                       className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold w-full"
                       asChild
                     >
-                      <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                        ابدأ الآن
+                      <Link href="/sign-up?tier=basic&trial=true" onClick={() => setMobileMenuOpen(false)}>
+                        جرّب بدينار
                       </Link>
                     </Button>
                   </>

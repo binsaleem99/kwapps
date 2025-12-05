@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { createClient } from '@/lib/supabase/client'
+import { translateAuthError } from '@/lib/auth/translate-error'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,7 +45,7 @@ export default function UpdatePasswordPage() {
       const { data: { user }, error } = await supabase.auth.getUser()
 
       if (error || !user) {
-        setError('رابط غير صالح أو منتهي الصلاحية')
+        setError(translateAuthError(error?.message || 'Token has expired or is invalid'))
         setIsVerifying(false)
         return
       }
@@ -67,13 +68,13 @@ export default function UpdatePasswordPage() {
       })
 
       if (error) {
-        setError('حدث خطأ أثناء تحديث كلمة المرور')
+        setError(translateAuthError(error.message || ''))
       } else {
         // Success - redirect to login
         router.push('/sign-in?message=password_updated')
       }
-    } catch (err) {
-      setError('حدث خطأ غير متوقع')
+    } catch (err: any) {
+      setError(translateAuthError(err?.message || ''))
     } finally {
       setIsLoading(false)
     }
