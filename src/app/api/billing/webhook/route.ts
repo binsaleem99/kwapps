@@ -314,10 +314,14 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Update user's plan in users table (if exists)
+      // Update user's plan and payment_status in users table
       await supabase
         .from('users')
-        .update({ plan: tier.name })
+        .update({
+          plan: tier.name,
+          payment_status: subscriptionStatus, // Mark as 'trial' or 'active'
+          payment_verified_at: now.toISOString(),
+        })
         .eq('id', transaction.user_id)
 
       console.log(

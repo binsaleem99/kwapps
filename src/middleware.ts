@@ -17,6 +17,17 @@ export async function middleware(req: NextRequest) {
   const protectedRoutes = ['/dashboard(.*)', '/builder(.*)', '/admin(.*)', '/onboarding(.*)']
   const adminRoutes = ['/admin(.*)']
 
+  // Routes that are allowed without payment (payment selection pages)
+  const paymentExemptRoutes = [
+    '/pricing',
+    '/sign-in(.*)',
+    '/sign-up(.*)',
+    '/checkout',
+    '/billing/success',
+    '/billing/cancel',
+    '/api/billing/(.*)',
+  ]
+
   // Create Supabase client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -84,6 +95,43 @@ export async function middleware(req: NextRequest) {
         console.error('Admin check error:', error)
         return NextResponse.redirect(new URL('/dashboard', req.url))
       }
+    }
+  }
+
+  // ============================================================================
+  // PAYMENT GATE: Enforce payment for authenticated users
+  // ============================================================================
+  if (userId && !matchRoute(pathname, paymentExemptRoutes)) {
+    try {
+      const { data: user } = await supabase
+        .from('users')
+        .select('payment_status, is_admin')
+        .eq('id', userId)
+        .maybeSingle()
+
+      // Skip payment gate for admins
+      if (user?.is_admin) {
+        return res
+      }
+
+      // Check if user needs to select a plan
+      if (user?.payment_status === 'payment_required') {
+        // User must select a plan - redirect to pricing with tier selection
+        const pricingUrl = new URL('/sign-in', req.url)
+        pricingUrl.searchParams.set('payment_required', 'true')
+        pricingUrl.searchParams.set('redirect_url', req.url)
+        return NextResponse.redirect(pricingUrl)
+      }
+
+      // Check if payment expired or cancelled
+      if (user?.payment_status === 'expired' || user?.payment_status === 'cancelled') {
+        const pricingUrl = new URL('/pricing', req.url)
+        pricingUrl.searchParams.set('payment_expired', 'true')
+        return NextResponse.redirect(pricingUrl)
+      }
+    } catch (error) {
+      console.error('Payment gate check error:', error)
+      // On error, allow access but log the issue
     }
   }
 
