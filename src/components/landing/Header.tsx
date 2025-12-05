@@ -158,7 +158,7 @@ export function Header() {
                   className="bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black shadow-glow-lg hover:shadow-electric hover:scale-110 transition-all duration-300"
                   asChild
                 >
-                  <Link href="/sign-up">ابدأ مجاناً</Link>
+                  <Link href="/sign-up">ابدأ الآن</Link>
                 </Button>
               </>
             )}
@@ -267,7 +267,7 @@ export function Header() {
                       asChild
                     >
                       <Link href="/sign-up" onClick={() => setMobileMenuOpen(false)}>
-                        ابدأ مجاناً
+                        ابدأ الآن
                       </Link>
                     </Button>
                   </>

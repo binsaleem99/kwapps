@@ -31,6 +31,7 @@ interface BuilderNavProps {
   isSaving?: boolean
   isDeploying?: boolean
   hasChanges?: boolean
+  versionHistory?: React.ReactNode
 }
 
 export function BuilderNav({
@@ -41,6 +42,7 @@ export function BuilderNav({
   isSaving = false,
   isDeploying = false,
   hasChanges = false,
+  versionHistory,
 }: BuilderNavProps) {
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -100,6 +102,9 @@ export function BuilderNav({
 
             {/* Divider */}
             <div className="h-8 w-px bg-slate-200 mx-2" />
+
+            {/* Version History */}
+            {versionHistory}
 
             {/* Action Buttons */}
             {onSave && (

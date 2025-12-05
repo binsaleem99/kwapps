@@ -8,8 +8,11 @@ import ChatPanelNew from '@/components/builder/chat-panel-new'
 import PreviewPanel from '@/components/builder/preview-panel'
 import { BuilderNav } from '@/components/builder/builder-nav'
 import { BuilderErrorBoundary } from '@/components/builder/error-boundary'
+import { ProjectSidebar } from '@/components/builder/project-sidebar'
+import { VersionHistory } from '@/components/builder/version-history'
 import { Button } from '@/components/ui/button'
 import { AlertCircle, Sparkles, Loader2 } from 'lucide-react'
+import type { GeminiPlan, GeminiAnnotations } from '@/lib/gemini/types'
 
 export function BuilderPageContentNew() {
   const router = useRouter()
@@ -25,6 +28,11 @@ export function BuilderPageContentNew() {
   const [isSaving, setIsSaving] = useState(false)
   const [isDeploying, setIsDeploying] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [previewCode, setPreviewCode] = useState<string | null>(null) // For version preview
+  const [annotations, setAnnotations] = useState<GeminiAnnotations | null>(null)
+  const [isAnnotating, setIsAnnotating] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState<GeminiPlan | null>(null)
 
   useEffect(() => {
     if (isLoaded) {
@@ -123,15 +131,51 @@ export function BuilderPageContentNew() {
     }
   }
 
-  function handleCodeGenerated(code: string) {
+  async function handleCodeGenerated(code: string) {
     console.log('[BuilderContent] ========== CODE GENERATED ==========')
     console.log('[BuilderContent] Code length:', code?.length)
     console.log('[BuilderContent] Code preview:', code?.substring(0, 200))
     console.log('[BuilderContent] Previous generatedCode:', generatedCode?.substring(0, 50))
     setGeneratedCode(code)
+    setPreviewCode(null) // Clear any version preview
+    setAnnotations(null) // Clear annotations for new code
     setHasUnsavedChanges(true)
     console.log('[BuilderContent] State updated, new code set')
     console.log('[BuilderContent] =====================================')
+
+    // Save version to database
+    if (projectId && userId) {
+      try {
+        const supabase = createClient()
+        await supabase.rpc('save_code_version', {
+          p_project_id: projectId,
+          p_user_id: userId,
+          p_code: code,
+          p_description: 'Generated code',
+        })
+        console.log('[BuilderContent] Version saved to database')
+      } catch (error) {
+        console.error('[BuilderContent] Failed to save version:', error)
+      }
+    }
+  }
+
+  function handleVersionPreview(code: string) {
+    setPreviewCode(code)
+  }
+
+  function handleVersionRestore(code: string) {
+    setGeneratedCode(code)
+    setPreviewCode(null)
+    setHasUnsavedChanges(false) // Version restore auto-saves
+  }
+
+  function handleSelectProject(newProjectId: string) {
+    if (hasUnsavedChanges) {
+      const confirm = window.confirm('لديك تغييرات غير محفوظة. هل تريد المتابعة؟')
+      if (!confirm) return
+    }
+    router.push(`/builder?project=${newProjectId}`)
   }
 
   async function handleSave() {
@@ -196,6 +240,48 @@ export function BuilderPageContentNew() {
       await createNewProject(userId)
       setGeneratedCode(null)
       setHasUnsavedChanges(false)
+      setAnnotations(null) // Clear annotations for new project
+      setCurrentPlan(null) // Clear plan for new project
+    }
+  }
+
+  function handlePlanGenerated(plan: GeminiPlan) {
+    console.log('[BuilderContent] Plan received from Gemini:', plan.summary)
+    setCurrentPlan(plan)
+  }
+
+  async function handleRequestAnnotations() {
+    if (!projectId || !generatedCode) return
+
+    setIsAnnotating(true)
+    try {
+      const response = await fetch('/api/annotate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId,
+          code: generatedCode,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Annotation request failed')
+      }
+
+      const data = await response.json()
+
+      if (data.success && data.annotations) {
+        console.log('[BuilderContent] Annotations received:', data.annotations)
+        setAnnotations(data.annotations)
+      } else {
+        console.error('[BuilderContent] Annotation error:', data.error)
+        alert(data.error?.messageAr || 'فشل تحليل الكود')
+      }
+    } catch (error) {
+      console.error('[BuilderContent] Annotation error:', error)
+      alert('فشل تحليل الكود. يرجى المحاولة مرة أخرى.')
+    } finally {
+      setIsAnnotating(false)
     }
   }
 
@@ -253,6 +339,9 @@ export function BuilderPageContentNew() {
     )
   }
 
+  // Determine which code to show in preview (version preview or current)
+  const displayCode = previewCode || generatedCode
+
   return (
     <div className="h-screen flex flex-col bg-slate-50" dir="rtl">
       {/* Top Navigation */}
@@ -264,23 +353,68 @@ export function BuilderPageContentNew() {
         isSaving={isSaving}
         isDeploying={isDeploying}
         hasChanges={hasUnsavedChanges}
+        versionHistory={
+          projectId && userId ? (
+            <VersionHistory
+              projectId={projectId}
+              userId={userId}
+              onRestore={handleVersionRestore}
+              onPreview={handleVersionPreview}
+            />
+          ) : undefined
+        }
       />
 
-      {/* Main Content - Two Column Layout */}
+      {/* Main Content - Three Column Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Preview Panel - LEFT (70% width) */}
-        <div className="w-[70%] flex flex-col border-l border-gray-200">
+        {/* Project Sidebar - RIGHT (collapsible) */}
+        {userId && (
+          <ProjectSidebar
+            selectedProjectId={projectId}
+            onSelectProject={handleSelectProject}
+            onNewProject={handleNewProject}
+            userId={userId}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        )}
+
+        {/* Preview Panel - CENTER (flexible width) */}
+        <div className="flex-1 flex flex-col border-l border-gray-200 min-w-0">
+          {/* Version Preview Banner */}
+          {previewCode && (
+            <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 flex items-center justify-between">
+              <span className="text-amber-800 text-sm font-['Cairo']">
+                معاينة إصدار سابق - هذا ليس الإصدار الحالي
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPreviewCode(null)}
+                className="text-amber-800 border-amber-400 hover:bg-amber-200"
+              >
+                إغلاق المعاينة
+              </Button>
+            </div>
+          )}
           <BuilderErrorBoundary fallbackMessage="حدث خطأ في معاينة التطبيق.">
-            <PreviewPanel code={generatedCode} isLoading={false} />
+            <PreviewPanel
+              code={displayCode}
+              isLoading={false}
+              annotations={annotations}
+              onRequestAnnotations={handleRequestAnnotations}
+              isAnnotating={isAnnotating}
+            />
           </BuilderErrorBoundary>
         </div>
 
-        {/* Chat Panel - RIGHT (30% width) */}
-        <div className="w-[30%] flex flex-col">
+        {/* Chat Panel - LEFT (30% width) */}
+        <div className="w-[30%] flex flex-col border-l border-gray-200">
           <BuilderErrorBoundary fallbackMessage="حدث خطأ في لوحة المحادثة.">
             <ChatPanelNew
               projectId={projectId}
               onCodeGenerated={handleCodeGenerated}
+              onPlanGenerated={handlePlanGenerated}
               currentCode={generatedCode || undefined}
             />
           </BuilderErrorBoundary>

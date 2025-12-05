@@ -1,175 +1,389 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { upayments } from '@/lib/upayments/client'
+import { upayments, WebhookPayload } from '@/lib/upayments/client'
+import { TRIAL_CONFIG } from '@/types/billing'
+import type { TransactionType } from '@/types/billing'
 
 /**
  * UPayments Webhook Handler
- * Processes payment confirmations and updates subscription status
+ *
+ * Processes payment confirmations and activates subscriptions with credits.
+ *
+ * Security Features:
+ * - HMAC-SHA256 signature verification (fail-secure)
+ * - Idempotency check via processed_webhooks table
+ * - Arabic error messages for user-facing errors
+ *
+ * Webhook triggers:
+ * - Payment succeeds (result: "CAPTURED")
+ * - Payment fails (result: "NOT CAPTURED", "FAILED")
+ * - Payment canceled (result: "CANCELED")
+ *
+ * On success:
+ * - Creates user_subscription with credit allocation
+ * - Creates credit_transaction for initial allocation
+ * - Updates trial_subscription if trial payment
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text()
     const signature = request.headers.get('x-upayments-signature') || ''
 
-    // Verify webhook signature
+    // SECURITY: Verify webhook signature (fail-secure)
     if (!upayments.verifyWebhookSignature(body, signature)) {
-      console.error('Invalid webhook signature')
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+      console.error('[Webhook] SECURITY: Invalid or missing webhook signature')
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid signature',
+          errorAr: 'توقيع غير صالح - تم رفض الطلب',
+          code: 'INVALID_SIGNATURE',
+        },
+        { status: 400 }
+      )
     }
 
     // Parse webhook payload
     const payload = JSON.parse(body)
-    const webhookData = upayments.parseWebhook(payload)
+    const webhookData: WebhookPayload = upayments.parseWebhook(payload)
 
     const supabase = await createClient()
 
-    // Find the transaction
+    // IDEMPOTENCY: Check if webhook was already processed
+    const { data: existingWebhook } = await supabase
+      .from('processed_webhooks')
+      .select('id, processed_at')
+      .eq('track_id', webhookData.track_id)
+      .maybeSingle()
+
+    if (existingWebhook) {
+      console.log('[Webhook] Duplicate webhook detected, skipping:', {
+        track_id: webhookData.track_id,
+        processed_at: existingWebhook.processed_at,
+      })
+      return NextResponse.json({
+        success: true,
+        message: 'Webhook already processed',
+        messageAr: 'تم معالجة هذا الإشعار مسبقاً',
+        track_id: webhookData.track_id,
+        duplicate: true,
+      })
+    }
+
+    // Record webhook as processed BEFORE processing (to prevent race conditions)
+    const { error: insertError } = await supabase
+      .from('processed_webhooks')
+      .insert({
+        track_id: webhookData.track_id,
+        order_id: webhookData.order_id,
+        payment_id: webhookData.payment_id,
+        result: webhookData.result,
+      })
+
+    if (insertError) {
+      // If insert fails due to unique constraint, another process is handling it
+      if (insertError.code === '23505') {
+        console.log('[Webhook] Concurrent processing detected, skipping:', webhookData.track_id)
+        return NextResponse.json({
+          success: true,
+          message: 'Webhook being processed by another request',
+          messageAr: 'جاري معالجة هذا الإشعار',
+          track_id: webhookData.track_id,
+        })
+      }
+      console.error('[Webhook] Failed to record processed webhook:', insertError)
+    }
+
+    console.log('[Webhook] Processing UPayments webhook:', {
+      order_id: webhookData.order_id,
+      track_id: webhookData.track_id,
+      result: webhookData.result,
+      payment_type: webhookData.payment_type,
+      amount: webhookData.amount,
+    })
+
+    // Find payment transaction by order_id
     const { data: transaction, error: txError } = await supabase
       .from('payment_transactions')
-      .select('*, metadata')
+      .select('*')
       .eq('upayments_order_id', webhookData.order_id)
       .single()
 
     if (txError || !transaction) {
       console.error('Transaction not found:', webhookData.order_id)
-      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 })
+      return NextResponse.json({
+        success: false,
+        message: 'Transaction not found',
+        order_id: webhookData.order_id,
+      })
     }
 
-    // Update transaction status
+    const metadata = transaction.metadata as {
+      tier_id: string
+      tier_name: string
+      is_trial: boolean
+      credits_per_month: number
+      daily_bonus_credits: number
+    }
+
+    // Determine payment status
+    const isSuccess = upayments.isPaymentSuccessful(webhookData.result)
+    const status = isSuccess
+      ? 'success'
+      : webhookData.result === 'CANCELED'
+        ? 'canceled'
+        : 'failed'
+
+    // Update payment transaction
     await supabase
       .from('payment_transactions')
       .update({
-        upayments_transaction_id: webhookData.transaction_id,
-        status: webhookData.status,
-        payment_method: webhookData.payment_method,
-        updated_at: new Date().toISOString(),
+        upayments_transaction_id: webhookData.tran_id,
+        upayments_payment_id: webhookData.payment_id,
+        upayments_track_id: webhookData.track_id,
+        status,
+        payment_method: webhookData.payment_type,
+        webhook_received_at: new Date().toISOString(),
+        webhook_data: webhookData,
+        card_token: webhookData.card_token || null,
+        card_last_four: webhookData.card_last_four || null,
+        card_type: webhookData.payment_type || null,
       })
       .eq('id', transaction.id)
 
     // Handle successful payment
-    if (webhookData.status === 'success') {
-      const metadata = transaction.metadata as any
+    if (isSuccess) {
+      const now = new Date()
 
-      // Get the plan
-      const { data: plan } = await supabase
-        .from('subscription_plans')
+      // Calculate subscription period
+      const periodDays = metadata.is_trial ? TRIAL_CONFIG.duration_days : 30
+      const periodEnd = new Date(now)
+      periodEnd.setDate(periodEnd.getDate() + periodDays)
+
+      // Get tier for credits info
+      const { data: tier } = await supabase
+        .from('subscription_tiers')
         .select('*')
-        .eq('id', metadata.plan_id)
+        .eq('id', metadata.tier_id)
         .single()
 
-      if (!plan) {
-        console.error('Plan not found:', metadata.plan_id)
-        return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+      if (!tier) {
+        console.error('Tier not found:', metadata.tier_id)
+        return NextResponse.json({
+          success: false,
+          message: 'Tier not found',
+        })
       }
 
-      // Check if this is a tokenization request
-      if (metadata.tokenize_card && webhookData.card_token) {
-        // Create/update subscription with card token for recurring billing
-        await supabase.from('user_subscriptions').upsert({
-          user_id: transaction.user_id,
-          plan_id: plan.id,
-          status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          card_token: webhookData.card_token,
-          card_last_four: webhookData.card_last_four,
-          card_type: webhookData.payment_method,
-          last_payment_date: new Date().toISOString(),
-          last_payment_amount: webhookData.amount,
-          next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          failed_payment_attempts: 0,
-        })
+      const creditsToAllocate = tier.credits_per_month
+      const subscriptionStatus = metadata.is_trial ? 'trial' : 'active'
 
-        // Update transaction to link to subscription
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('id')
-          .eq('user_id', transaction.user_id)
-          .single()
-
-        if (subscription) {
-          await supabase
-            .from('payment_transactions')
-            .update({ subscription_id: subscription.id })
-            .eq('id', transaction.id)
-        }
-
-        console.log(`Card tokenized and subscription created for user ${transaction.user_id}`)
-      } else {
-        // Regular payment - activate or update subscription
-        await supabase.from('user_subscriptions').upsert({
-          user_id: transaction.user_id,
-          plan_id: plan.id,
-          status: 'active',
-          current_period_start: new Date().toISOString(),
-          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          last_payment_date: new Date().toISOString(),
-          last_payment_amount: webhookData.amount,
-          next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          failed_payment_attempts: 0,
-        })
-
-        // Update transaction to link to subscription
-        const { data: subscription } = await supabase
-          .from('user_subscriptions')
-          .select('id')
-          .eq('user_id', transaction.user_id)
-          .single()
-
-        if (subscription) {
-          await supabase
-            .from('payment_transactions')
-            .update({ subscription_id: subscription.id })
-            .eq('id', transaction.id)
-        }
-
-        console.log(`Subscription activated for user ${transaction.user_id}`)
-      }
-
-      // Initialize usage tracking if not exists
-      const { data: existingUsage } = await supabase
-        .from('usage_tracking')
+      // Check for existing subscription
+      const { data: existingSub } = await supabase
+        .from('user_subscriptions')
         .select('id')
         .eq('user_id', transaction.user_id)
-        .single()
+        .maybeSingle()
 
-      if (!existingUsage) {
-        await supabase.from('usage_tracking').insert({
-          user_id: transaction.user_id,
-        })
+      let subscriptionId: string
+
+      if (existingSub) {
+        // Update existing subscription (e.g., trial converting or renewal)
+        const { data: updated, error: updateError } = await supabase
+          .from('user_subscriptions')
+          .update({
+            tier_id: tier.id,
+            status: subscriptionStatus,
+            is_trial: metadata.is_trial,
+            trial_ends_at: metadata.is_trial ? periodEnd.toISOString() : null,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            credits_balance: creditsToAllocate,
+            credits_allocated_this_period: creditsToAllocate,
+            credits_bonus_earned: 0,
+            credits_rollover: 0,
+            last_payment_amount: transaction.amount,
+            last_payment_date: now.toISOString(),
+            payment_method: 'upayments',
+            failed_payment_attempts: 0,
+          })
+          .eq('id', existingSub.id)
+          .select('id')
+          .single()
+
+        if (updateError || !updated) {
+          throw new Error('Failed to update subscription')
+        }
+        subscriptionId = updated.id
+      } else {
+        // Create new subscription
+        const { data: newSub, error: createError } = await supabase
+          .from('user_subscriptions')
+          .insert({
+            user_id: transaction.user_id,
+            tier_id: tier.id,
+            status: subscriptionStatus,
+            is_trial: metadata.is_trial,
+            trial_ends_at: metadata.is_trial ? periodEnd.toISOString() : null,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            credits_balance: creditsToAllocate,
+            credits_allocated_this_period: creditsToAllocate,
+            credits_bonus_earned: 0,
+            credits_rollover: 0,
+            last_payment_amount: transaction.amount,
+            last_payment_date: now.toISOString(),
+            payment_method: 'upayments',
+            failed_payment_attempts: 0,
+          })
+          .select('id')
+          .single()
+
+        if (createError || !newSub) {
+          throw new Error('Failed to create subscription')
+        }
+        subscriptionId = newSub.id
       }
-    } else if (webhookData.status === 'failed') {
-      // Handle failed payment
-      console.error(`Payment failed for order ${webhookData.order_id}`)
 
-      // Increment failed payment attempts
+      // Create credit allocation transaction
+      await supabase.from('credit_transactions').insert({
+        user_id: transaction.user_id,
+        subscription_id: subscriptionId,
+        transaction_type: 'allocation' as TransactionType,
+        amount: creditsToAllocate,
+        balance_after: creditsToAllocate,
+        description_ar: metadata.is_trial
+          ? `تخصيص رصيد الفترة التجريبية: ${creditsToAllocate} رصيد - ${tier.display_name_ar}`
+          : `تخصيص رصيد شهري: ${creditsToAllocate} رصيد - ${tier.display_name_ar}`,
+        description_en: metadata.is_trial
+          ? `Trial credit allocation: ${creditsToAllocate} credits - ${tier.display_name_en}`
+          : `Monthly credit allocation: ${creditsToAllocate} credits - ${tier.display_name_en}`,
+      })
+
+      // Update payment transaction with subscription ID
+      await supabase
+        .from('payment_transactions')
+        .update({ subscription_id: subscriptionId })
+        .eq('id', transaction.id)
+
+      // Handle trial-specific updates
+      if (metadata.is_trial) {
+        // Create or update trial_subscriptions record
+        const { data: existingTrial } = await supabase
+          .from('trial_subscriptions')
+          .select('id')
+          .eq('user_id', transaction.user_id)
+          .maybeSingle()
+
+        if (existingTrial) {
+          await supabase
+            .from('trial_subscriptions')
+            .update({
+              subscription_id: subscriptionId,
+              payment_status: 'paid',
+              payment_transaction_id: webhookData.tran_id || webhookData.payment_id,
+              payment_date: now.toISOString(),
+            })
+            .eq('id', existingTrial.id)
+        } else {
+          await supabase.from('trial_subscriptions').insert({
+            user_id: transaction.user_id,
+            subscription_id: subscriptionId,
+            trial_price_kwd: TRIAL_CONFIG.price_kwd,
+            trial_duration_days: TRIAL_CONFIG.duration_days,
+            started_at: now.toISOString(),
+            ends_at: periodEnd.toISOString(),
+            payment_status: 'paid',
+            payment_transaction_id: webhookData.tran_id || webhookData.payment_id,
+            payment_date: now.toISOString(),
+          })
+
+          // Link trial to payment transaction
+          const { data: trialRecord } = await supabase
+            .from('trial_subscriptions')
+            .select('id')
+            .eq('subscription_id', subscriptionId)
+            .single()
+
+          if (trialRecord) {
+            await supabase
+              .from('payment_transactions')
+              .update({ trial_id: trialRecord.id })
+              .eq('id', transaction.id)
+          }
+        }
+      }
+
+      // Update user's plan in users table (if exists)
+      await supabase
+        .from('users')
+        .update({ plan: tier.name })
+        .eq('id', transaction.user_id)
+
+      console.log(
+        `Payment success - ${metadata.is_trial ? 'Trial' : 'Subscription'} activated for user ${transaction.user_id}`,
+        `Tier: ${tier.name}, Credits: ${creditsToAllocate}`
+      )
+
+    } else if (status === 'failed') {
+      // Handle failed payment
+      console.error(`Payment failed for order ${webhookData.order_id}:`, webhookData.result)
+
+      // Increment failed attempts if subscription exists
       const { data: subscription } = await supabase
         .from('user_subscriptions')
-        .select('*')
+        .select('id, failed_payment_attempts')
         .eq('user_id', transaction.user_id)
-        .single()
+        .maybeSingle()
 
       if (subscription) {
-        const failedAttempts = (subscription.failed_payment_attempts || 0) + 1
-
+        const attempts = (subscription.failed_payment_attempts || 0) + 1
         await supabase
           .from('user_subscriptions')
           .update({
-            failed_payment_attempts: failedAttempts,
-            status: failedAttempts >= 3 ? 'past_due' : subscription.status,
+            failed_payment_attempts: attempts,
+            status: attempts >= 3 ? 'expired' : 'active',
           })
           .eq('id', subscription.id)
-
-        console.log(`Failed payment attempt ${failedAttempts} for user ${transaction.user_id}`)
       }
+
+      // Update trial payment status if trial
+      if (metadata.is_trial) {
+        await supabase
+          .from('trial_subscriptions')
+          .update({ payment_status: 'failed' })
+          .eq('user_id', transaction.user_id)
+      }
+
+    } else if (status === 'canceled') {
+      console.log(`Payment canceled for order ${webhookData.order_id}`)
     }
 
-    return NextResponse.json({ success: true, received: true })
+    return NextResponse.json({
+      success: true,
+      received: true,
+      order_id: webhookData.order_id,
+      result: webhookData.result,
+      status,
+    })
+
   } catch (error: any) {
-    console.error('Webhook error:', error)
+    console.error('Webhook processing error:', error)
     return NextResponse.json(
       { error: error.message || 'Webhook processing failed' },
       { status: 500 }
     )
   }
+}
+
+/**
+ * GET - Webhook health check
+ */
+export async function GET() {
+  return NextResponse.json({
+    status: 'ok',
+    message: 'UPayments webhook endpoint active',
+    timestamp: new Date().toISOString(),
+    supported_events: ['CAPTURED', 'NOT CAPTURED', 'FAILED', 'CANCELED'],
+  })
 }

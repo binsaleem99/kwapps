@@ -6,54 +6,60 @@ import { motion } from "framer-motion";
 
 const plans = [
   {
-    name: "مجاني",
-    nameEn: "FREE",
-    price: "0",
-    period: "للأبد",
-    description: "للتجربة والبدء",
-    features: [
-      "3 مطالبات يومياً",
-      "قوالب أساسية",
-      "معاينة مباشرة",
-      "دعم المجتمع",
-    ],
-    cta: "ابدأ مجاناً",
-    href: "/signup",
-    highlighted: false,
-  },
-  {
-    name: "منشئ",
-    nameEn: "BUILDER",
-    price: "33",
+    name: "المطور",
+    nameEn: "DEVELOPER",
+    price: "27",
     period: "شهرياً",
-    description: "للمطورين والوكالات",
+    description: "للمطورين المستقلين",
+    hasTrial: true,
+    trialPrice: "1",
     features: [
-      "30 مطالبة يومياً",
-      "جميع القوالب",
+      "10 مشاريع",
+      "50 طلبات AI يومياً",
       "تصدير الكود",
-      "دعم ذو أولوية",
-      "مشاريع غير محدودة",
+      "دعم عبر البريد",
+      "500MB تخزين",
     ],
-    cta: "ابدأ الآن",
-    href: "/signup?plan=builder",
+    cta: "جرب بدينار واحد",
+    href: "/signup?plan=developer",
     highlighted: true,
   },
   {
-    name: "احترافي",
-    nameEn: "PRO",
-    price: "59",
+    name: "الاحترافي",
+    nameEn: "PROFESSIONAL",
+    price: "39",
     period: "شهرياً",
-    description: "للشركات والفرق",
+    description: "للفرق الصغيرة",
+    hasTrial: false,
     features: [
-      "100 مطالبة يومياً",
-      "قوالب مميزة",
-      "نشر فوري",
-      "تحكم بالإصدارات",
-      "مشاركة الفريق",
-      "دعم مباشر 24/7",
+      "25 مشروع",
+      "100 طلبات AI يومياً",
+      "تصدير الكود",
+      "دعم ذو أولوية",
+      "2GB تخزين",
+      "تحليلات متقدمة",
     ],
-    cta: "ترقية",
-    href: "/signup?plan=pro",
+    cta: "ابدأ الآن",
+    href: "/signup?plan=professional",
+    highlighted: false,
+  },
+  {
+    name: "الوكالات",
+    nameEn: "AGENCY",
+    price: "75",
+    period: "شهرياً",
+    description: "للشركات والوكالات",
+    hasTrial: false,
+    features: [
+      "مشاريع غير محدودة",
+      "طلبات AI غير محدودة",
+      "نشر فوري",
+      "دعم مباشر 24/7",
+      "10GB تخزين",
+      "White Label",
+    ],
+    cta: "تواصل معنا",
+    href: "/signup?plan=agency",
     highlighted: false,
   },
 ];
@@ -86,7 +92,7 @@ export function Pricing() {
             </span>
           </h2>
           <p className="text-2xl font-extrabold text-slate-600 leading-relaxed">
-            ابدأ مجاناً وترقّى عندما تكون جاهزاً. بدون مفاجآت
+            جرب خطة المطور بدينار واحد لأسبوع كامل. بدون مفاجآت
           </p>
         </motion.div>
 
@@ -106,17 +112,17 @@ export function Pricing() {
                   ? "bg-gradient-to-br from-slate-900 to-slate-800 shadow-glow-2xl border-2 border-blue-500"
                   : "bg-white border-2 border-slate-200 shadow-lg hover:shadow-glow-xl"
               } transition-all duration-500 hover:-translate-y-2`}>
-                {/* Popular badge */}
-                {plan.highlighted && (
+                {/* Trial badge for developer plan */}
+                {plan.hasTrial && (
                   <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-500 text-center py-3 shadow-electric">
                     <span className="text-sm font-black text-white tracking-wide">
-                      ⭐ الأكثر شعبية
+                      🎯 جرب أسبوع كامل بدينار واحد فقط
                     </span>
                   </div>
                 )}
 
                 {/* Card content */}
-                <div className={`p-10 h-full flex flex-col ${plan.highlighted ? "pt-16" : ""}`}>
+                <div className={`p-10 h-full flex flex-col ${plan.hasTrial ? "pt-16" : ""}`}>
                   {/* Plan name */}
                   <div className="mb-8">
                     <div className={`text-xs font-black mb-2 tracking-wider ${

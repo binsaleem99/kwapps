@@ -16,6 +16,8 @@ import { createClient } from '@/lib/supabase/server'
 import { StreamingDeepSeekClient } from '@/lib/deepseek/streaming-client'
 import { ConversationManager } from '@/lib/deepseek/conversation-manager'
 import { TokenTracker, PLAN_LIMITS } from '@/lib/deepseek/token-tracker'
+import { geminiClient, formatPlanForDeepSeek } from '@/lib/gemini/client'
+import type { GenerationMode, GeminiPlan } from '@/lib/gemini/types'
 import type { UserPlan, User, Project } from '@/types'
 
 // Request body interface
@@ -23,6 +25,7 @@ interface GenerateRequest {
   prompt: string // Arabic prompt
   project_id?: string // Project ID for context
   current_code?: string // Current code for context
+  mode?: GenerationMode // 'standard' | 'smart' (default: 'standard')
 }
 
 // SSE Event Types
@@ -30,7 +33,8 @@ type SSEEvent =
   | { type: 'progress'; data: { stage: string; percent: number; message: string } }
   | { type: 'tokens'; data: { input?: number; output?: number; total?: number } }
   | { type: 'code_chunk'; data: string }
-  | { type: 'complete'; data: { code: string; tokens: number; projectId: string } }
+  | { type: 'plan'; data: { plan: GeminiPlan } } // NEW: Gemini plan for Smart mode
+  | { type: 'complete'; data: { code: string; tokens: number; projectId: string; mode: GenerationMode } }
   | { type: 'error'; data: { message: string; messageAr: string } }
 
 /**
@@ -43,7 +47,7 @@ function sendSSE(event: SSEEvent): string {
 export async function POST(request: NextRequest) {
   // Parse request body
   const body: GenerateRequest = await request.json()
-  const { prompt, project_id } = body
+  const { prompt, project_id, mode = 'standard' } = body
 
   // Validate prompt
   if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -158,16 +162,96 @@ export async function POST(request: NextRequest) {
         await ConversationManager.saveMessage(projectId, 'user', prompt, 0)
 
         // Build contextual prompt
-        const { contextPrompt } = await ConversationManager.buildContextualPrompt(
+        let { contextPrompt } = await ConversationManager.buildContextualPrompt(
           projectId,
           prompt
         )
+
+        let geminiPlan: GeminiPlan | null = null
+        let geminiTokens = 0
+
+        // ============================================
+        // SMART MODE: Gemini Planning Stage
+        // ============================================
+        if (mode === 'smart' && geminiClient.isConfigured()) {
+          console.log('[API] Smart mode: Starting Gemini planning...')
+
+          // Send planning progress
+          controller.enqueue(
+            encoder.encode(
+              sendSSE({
+                type: 'progress',
+                data: {
+                  stage: 'planning',
+                  percent: 10,
+                  message: 'جاري التخطيط للتطبيق باستخدام Gemini...',
+                },
+              })
+            )
+          )
+
+          // Call Gemini for planning
+          const planResult = await geminiClient.planFromPrompt(prompt, {
+            projectName: undefined, // Could fetch from project
+            previousPrompts: [], // Could fetch from messages
+          })
+
+          if (planResult.success && planResult.data) {
+            geminiPlan = planResult.data
+            geminiTokens = planResult.tokensUsed || 0
+
+            console.log('[API] Gemini plan created:', geminiPlan.summary)
+
+            // Send plan to client
+            controller.enqueue(
+              encoder.encode(
+                sendSSE({
+                  type: 'plan',
+                  data: { plan: geminiPlan },
+                })
+              )
+            )
+
+            // Inject plan into DeepSeek prompt
+            const planPrompt = formatPlanForDeepSeek(geminiPlan)
+            contextPrompt = `${planPrompt}\n\n---\n\nالطلب الأصلي: ${contextPrompt}`
+
+            // Update progress
+            controller.enqueue(
+              encoder.encode(
+                sendSSE({
+                  type: 'progress',
+                  data: {
+                    stage: 'planning',
+                    percent: 20,
+                    message: 'تم التخطيط! جاري إنشاء الكود...',
+                  },
+                })
+              )
+            )
+          } else {
+            console.warn('[API] Gemini planning failed, falling back to standard mode:', planResult.error)
+            // Continue with standard mode if Gemini fails
+          }
+
+          // Log Smart mode usage for analytics
+          await supabase.from('analytics_events').insert({
+            user_id: userId,
+            event_name: 'generation_smart_mode',
+            event_data: {
+              project_id: projectId,
+              plan: user.plan,
+              gemini_tokens: geminiTokens,
+              plan_success: !!geminiPlan,
+            },
+          })
+        }
 
         // Initialize streaming client
         const streamingClient = new StreamingDeepSeekClient()
 
         let accumulatedCode = ''
-        let totalTokens = 0
+        let totalTokens = geminiTokens // Include Gemini tokens in total
 
         // Stream generation with progress updates
         const generator = streamingClient.generateWithProgress(
@@ -266,6 +350,7 @@ export async function POST(request: NextRequest) {
           codeLength: accumulatedCode.length,
           tokens: totalTokens,
           projectId,
+          mode,
           firstChars: accumulatedCode.substring(0, 100),
         })
 
@@ -277,6 +362,7 @@ export async function POST(request: NextRequest) {
                 code: accumulatedCode,
                 tokens: totalTokens,
                 projectId,
+                mode,
               },
             })
           )

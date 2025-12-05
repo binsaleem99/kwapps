@@ -167,7 +167,7 @@ export function PricingCard({
             : 'bg-gray-900 hover:bg-gray-800'
         }`}
       >
-        {loading ? 'جاري التحميل...' : name === 'free' ? 'ابدأ مجاناً' : 'اختر الخطة'}
+        {loading ? 'جاري التحميل...' : 'اختر الخطة'}
       </Button>
 
       {name === 'hosting' && (

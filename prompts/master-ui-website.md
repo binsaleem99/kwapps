@@ -220,7 +220,7 @@ import { BlurFade } from '@/components/magicui/blur-fade'
       </div>
     </div>
     <Button className="bg-blue-500 hover:bg-blue-600">
-      ابدأ مجاناً
+      ابدأ الآن
     </Button>
   </div>
 </nav>

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Send, Loader2, AlertCircle, Square, Sparkles, MessageSquare } from 'lucide-react'
+import { Send, Loader2, AlertCircle, Square, Sparkles, MessageSquare, Zap, Brain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Progress } from '@/components/ui/progress'
 import { ClarificationPanel } from './clarification-panel'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import type { GenerationMode, GeminiPlan } from '@/lib/gemini/types'
 
 interface Message {
   id: string
@@ -19,11 +21,12 @@ interface Message {
 interface ChatPanelProps {
   projectId: string
   onCodeGenerated: (code: string) => void
+  onPlanGenerated?: (plan: GeminiPlan) => void
   currentCode?: string
 }
 
 interface ProgressState {
-  stage: 'analyzing' | 'translating' | 'generating' | 'verifying' | 'securing' | 'complete'
+  stage: 'analyzing' | 'planning' | 'translating' | 'generating' | 'verifying' | 'securing' | 'complete'
   percent: number
   message: string
 }
@@ -38,7 +41,7 @@ interface Question {
   }[]
 }
 
-export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }: ChatPanelProps) {
+export default function ChatPanelNew({ projectId, onCodeGenerated, onPlanGenerated, currentCode }: ChatPanelProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -49,6 +52,8 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
   const [clarificationQuestions, setClarificationQuestions] = useState<Question[]>([])
   const [showClarification, setShowClarification] = useState(false)
   const [pendingPrompt, setPendingPrompt] = useState('')
+  const [generationMode, setGenerationMode] = useState<GenerationMode>('standard')
+  const [currentPlan, setCurrentPlan] = useState<GeminiPlan | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -172,6 +177,7 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
     setIsGenerating(true)
     setError(null)
     setProgress(null)
+    setCurrentPlan(null) // Reset plan for new generation
 
     // Build enhanced prompt with clarifications
     let enhancedPrompt = userPrompt
@@ -203,7 +209,7 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
     abortControllerRef.current = abortController
 
     try {
-      console.log('[ChatPanel] Starting generation request...')
+      console.log('[ChatPanel] Starting generation request...', { mode: generationMode })
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -211,6 +217,7 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
           prompt: enhancedPrompt,
           project_id: projectId,
           current_code: currentCode,
+          mode: generationMode,
         }),
         signal: abortController.signal,
       })
@@ -253,6 +260,17 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
             switch (event.type) {
               case 'progress':
                 setProgress(event.data)
+                break
+
+              case 'plan':
+                // Smart mode: Gemini plan received
+                if (event.data?.plan) {
+                  console.log('[ChatPanel] Gemini plan received:', event.data.plan.summary)
+                  setCurrentPlan(event.data.plan)
+                  if (onPlanGenerated) {
+                    onPlanGenerated(event.data.plan)
+                  }
+                }
                 break
 
               case 'code_chunk':
@@ -328,7 +346,53 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
             <MessageSquare className="w-5 h-5 text-blue-500" />
             <h2 className="text-lg font-semibold text-gray-900 font-['Cairo']">محادثة المشروع</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Mode Toggle */}
+            <TooltipProvider>
+              <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setGenerationMode('standard')}
+                      disabled={isGenerating || isAnalyzing}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all font-['Cairo'] ${
+                        generationMode === 'standard'
+                          ? 'bg-white text-blue-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <Zap className="w-4 h-4" />
+                      <span>قياسي</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-['Cairo']">
+                    <p>توليد سريع باستخدام DeepSeek فقط</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setGenerationMode('smart')}
+                      disabled={isGenerating || isAnalyzing}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all font-['Cairo'] ${
+                        generationMode === 'smart'
+                          ? 'bg-white text-emerald-600 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      <Brain className="w-4 h-4" />
+                      <span>ذكي</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="font-['Cairo']">
+                    <p>تخطيط Gemini + توليد DeepSeek = نتائج أفضل</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+
+            {/* Usage Counter */}
             <div className="text-sm text-gray-600 font-['Cairo'] bg-blue-50 px-3 py-1 rounded-full">
               <span className="font-bold text-blue-600">{usage.remaining}</span>
               <span className="mx-1">/</span>
@@ -384,6 +448,34 @@ export default function ChatPanelNew({ projectId, onCodeGenerated, currentCode }
             onConfirm={handleClarificationConfirm}
             onSkip={handleClarificationSkip}
           />
+        )}
+
+        {/* Smart Mode Plan Card */}
+        {isGenerating && currentPlan && (
+          <div className="flex justify-start">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl px-4 py-4 w-full max-w-md shadow-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="w-5 h-5 text-emerald-600" />
+                <p className="text-sm font-semibold text-emerald-800 font-['Cairo']">خطة Gemini</p>
+              </div>
+              <p className="text-sm text-gray-700 font-['Cairo'] mb-2">{currentPlan.summary}</p>
+              <div className="flex flex-wrap gap-2">
+                {currentPlan.sections?.slice(0, 4).map((section) => (
+                  <span
+                    key={section.id}
+                    className="text-xs bg-white text-emerald-700 px-2 py-1 rounded-full border border-emerald-200 font-['Cairo']"
+                  >
+                    {section.name}
+                  </span>
+                ))}
+                {currentPlan.sections && currentPlan.sections.length > 4 && (
+                  <span className="text-xs text-emerald-600 font-['Cairo']">
+                    +{currentPlan.sections.length - 4} أقسام أخرى
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Generation Progress */}

@@ -1,107 +1,243 @@
 /**
  * UPayments API Client
- * Handles payment gateway integration for Kuwait market
+ * Official API Integration for Kuwait Payment Gateway
  *
- * UPayments doesn't have native subscriptions, so we use:
- * - KFAST tokenization for K-Net (debit cards)
- * - MPGS tokenization for credit cards
- * - Manual recurring charges via cron jobs
+ * Documentation: https://developers.upayments.com/
+ *
+ * Supports:
+ * - KNET (Kuwait debit cards)
+ * - Credit Cards (Visa, Mastercard)
+ * - Apple Pay, Google Pay, Samsung Pay
+ * - Card tokenization for recurring payments
  */
 
 const UPAYMENTS_API_URL = process.env.UPAYMENTS_API_URL || 'https://api.upayments.com/api/v1'
+const UPAYMENTS_SANDBOX_URL = 'https://sandboxapi.upayments.com/api/v1'
 const UPAYMENTS_API_KEY = process.env.UPAYMENTS_API_KEY || ''
+const IS_SANDBOX = process.env.UPAYMENTS_SANDBOX === 'true'
 
-export interface CreatePaymentLinkParams {
-  amount: number // in KWD
-  order_id: string
-  customer_email: string
-  customer_name: string
-  redirect_url: string
-  webhook_url: string
-  reference?: string
-  products?: Array<{
-    name: string
-    description: string
-    price: number
-    quantity: number
-  }>
+// =============================================================================
+// TYPE DEFINITIONS - Based on Official UPayments API
+// =============================================================================
+
+export type PaymentGatewaySource = 'knet' | 'cc' | 'samsung-pay' | 'apple-pay' | 'google-pay' | 'create-invoice'
+export type PaymentResult = 'CAPTURED' | 'NOT CAPTURED' | 'CANCELED' | 'FAILED'
+export type Language = 'ar' | 'en'
+
+/**
+ * Order object for charge request
+ */
+export interface OrderInfo {
+  id: string              // Order/transaction ID (max 40 chars)
+  reference?: string      // Alternative reference (max 255 chars)
+  description: string     // Order description (max 500 chars)
+  currency: string        // Currency code (max 3 chars) - typically "KWD"
+  amount: number          // Charge amount (supports decimals)
 }
 
-export interface PaymentLinkResponse {
+/**
+ * Reference object for charge request
+ */
+export interface ReferenceInfo {
+  id: string              // Merchant's internal order ID (max 150 chars)
+}
+
+/**
+ * Customer information
+ */
+export interface CustomerInfo {
+  uniqueId?: string       // Customer unique identifier
+  name: string            // Customer name
+  email: string           // Customer email
+  mobile?: string         // Customer mobile number
+}
+
+/**
+ * Product item for itemized orders
+ */
+export interface ProductItem {
+  name: string
+  description: string
+  price: number
+  quantity: number
+}
+
+/**
+ * Token configuration for saved cards
+ */
+export interface TokenConfig {
+  customerUniqueToken: string  // 8-18 characters
+}
+
+/**
+ * Payment gateway configuration (for white-label)
+ */
+export interface PaymentGatewayConfig {
+  src: PaymentGatewaySource
+}
+
+/**
+ * Extra merchant data for multi-merchant setups
+ */
+export interface ExtraMerchantData {
+  amount?: number
+  knetCharge?: number
+  knetChargeType?: 'fixed' | 'percentage'
+  ccCharge?: number
+  ccChargeType?: 'fixed' | 'percentage'
+  ibanNumber?: string
+}
+
+/**
+ * Main charge request parameters
+ */
+export interface CreateChargeParams {
+  order: OrderInfo
+  reference: ReferenceInfo
+  language: Language
+  returnUrl: string           // Success redirect URL (mandatory)
+  cancelUrl: string           // Cancel redirect URL (mandatory)
+  notificationUrl: string     // Webhook URL (mandatory)
+  customer?: CustomerInfo
+  products?: ProductItem[]
+  tokens?: TokenConfig
+  paymentGateway?: PaymentGatewayConfig
+  extraMerchantData?: ExtraMerchantData[]
+  isWhiteLabel?: boolean
+  paymentLinkExpiryInMinutes?: number
+}
+
+/**
+ * Charge API response
+ */
+export interface ChargeResponse {
   status: boolean
   message: string
   data: {
     link: string
-    order_id: string
-    payment_id: string
+    trackId: string
+    paymentId: string
+    orderId: string
   }
 }
 
-export interface TokenizeCardParams {
-  order_id: string
-  customer_email: string
-  customer_name: string
-  redirect_url: string
-  webhook_url: string
-  tokenize: boolean
+/**
+ * Customer token creation request
+ */
+export interface CreateCustomerTokenParams {
+  customerUniqueToken: string | number  // 8-18 characters
 }
 
-export interface TokenizeCardResponse {
+/**
+ * Customer token response
+ */
+export interface CustomerTokenResponse {
   status: boolean
   message: string
   data: {
-    link: string
-    order_id: string
+    customerUniqueToken: string
   }
 }
 
-export interface ChargeTokenParams {
-  token: string
-  amount: number
-  order_id: string
-  customer_email: string
-}
-
-export interface ChargeTokenResponse {
+/**
+ * Payment status check response
+ */
+export interface PaymentStatusResponse {
   status: boolean
   message: string
   data: {
-    transaction_id: string
-    status: 'success' | 'failed' | 'pending'
+    paymentId: string
+    orderId: string
+    trackId: string
+    result: PaymentResult
     amount: number
-    order_id: string
+    currency: string
+    paymentType: string
+    transactionDate: string
+    customerEmail?: string
+    customerName?: string
+    cardToken?: string
+    cardLastFour?: string
   }
 }
 
+/**
+ * Official webhook payload from UPayments
+ */
 export interface WebhookPayload {
-  order_id: string
   payment_id: string
-  transaction_id: string
-  status: 'success' | 'failed' | 'pending'
-  amount: number
-  currency: string
-  customer_email: string
-  payment_method: 'knet' | 'credit_card' | 'debit_card'
-  card_token?: string // Only present if tokenization was requested
+  result: PaymentResult
+  post_date: string
+  tran_id: string
+  ref: string
+  track_id: string
+  auth: string
+  order_id: string
+  requested_order_id?: string
+  refund_order_id?: string
+  payment_type: string        // 'knet', 'cc', 'apple-pay', etc.
+  invoice_id?: string
+  transaction_date: string
+  receipt_id?: string
+  trn_udf?: string
+  // Additional fields that may be present
+  amount?: string | number
+  currency?: string
+  customer_email?: string
+  customer_name?: string
+  card_token?: string
   card_last_four?: string
-  created_at: string
 }
+
+/**
+ * Refund request parameters
+ */
+export interface CreateRefundParams {
+  orderId: string
+  totalPrice: number
+  customerFirstName: string
+  customerEmail: string
+  customerMobileNumber: string
+  reference: string
+  notifyUrl: string
+}
+
+/**
+ * Refund response
+ */
+export interface RefundResponse {
+  status: boolean
+  message: string
+  data: {
+    refundOrderId: string
+    orderId: string
+    refundId: string
+    refundArn: string
+  }
+}
+
+// =============================================================================
+// UPAYMENTS CLIENT CLASS
+// =============================================================================
 
 class UPaymentsClient {
   private apiKey: string
-  private apiUrl: string
+  private baseUrl: string
 
   constructor() {
     this.apiKey = UPAYMENTS_API_KEY
-    this.apiUrl = UPAYMENTS_API_URL
+    this.baseUrl = IS_SANDBOX ? UPAYMENTS_SANDBOX_URL : UPAYMENTS_API_URL
 
     if (!this.apiKey) {
-      console.warn('UPayments API key not configured')
+      console.warn('UPayments API key not configured. Set UPAYMENTS_API_KEY environment variable.')
     }
   }
 
+  /**
+   * Make authenticated request to UPayments API
+   */
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.apiUrl}${endpoint}`
+    const url = `${this.baseUrl}${endpoint}`
 
     const response = await fetch(url, {
       ...options,
@@ -112,100 +248,339 @@ class UPaymentsClient {
       },
     })
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }))
-      throw new Error(`UPayments API Error: ${error.message || response.statusText}`)
+    const data = await response.json()
+
+    if (!response.ok || data.status === false) {
+      const errorMessage = data.message || data.error?.message || response.statusText
+      throw new Error(`UPayments API Error: ${errorMessage}`)
     }
 
-    return response.json()
+    return data
+  }
+
+  // ===========================================================================
+  // PAYMENT METHODS
+  // ===========================================================================
+
+  /**
+   * Create a payment charge
+   * Endpoint: POST /charge
+   *
+   * @param params - Charge parameters following official API structure
+   * @returns Payment link and tracking information
+   */
+  async createCharge(params: CreateChargeParams): Promise<ChargeResponse> {
+    const body: Record<string, any> = {
+      order: {
+        id: params.order.id,
+        reference: params.order.reference || params.order.id,
+        description: params.order.description,
+        currency: params.order.currency,
+        amount: params.order.amount,
+      },
+      reference: {
+        id: params.reference.id,
+      },
+      language: params.language,
+      returnUrl: params.returnUrl,
+      cancelUrl: params.cancelUrl,
+      notificationUrl: params.notificationUrl,
+    }
+
+    // Add optional customer info
+    if (params.customer) {
+      body.customer = {
+        uniqueId: params.customer.uniqueId,
+        name: params.customer.name,
+        email: params.customer.email,
+        mobile: params.customer.mobile,
+      }
+    }
+
+    // Add optional products
+    if (params.products && params.products.length > 0) {
+      body.products = params.products.map(p => ({
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        quantity: p.quantity,
+      }))
+    }
+
+    // Add tokens for saved card payments
+    if (params.tokens) {
+      body.tokens = {
+        customerUniqueToken: params.tokens.customerUniqueToken,
+      }
+    }
+
+    // Add payment gateway for white-label
+    if (params.paymentGateway) {
+      body.paymentGateway = {
+        src: params.paymentGateway.src,
+      }
+    }
+
+    // Add extra merchant data for multi-merchant
+    if (params.extraMerchantData) {
+      body.extraMerchantData = params.extraMerchantData
+    }
+
+    // Add white-label flag
+    if (params.isWhiteLabel) {
+      body.isWhiteLabel = params.isWhiteLabel
+    }
+
+    // Add payment link expiry
+    if (params.paymentLinkExpiryInMinutes) {
+      body.paymentLinkExpiryInMinutes = params.paymentLinkExpiryInMinutes
+    }
+
+    return this.request<ChargeResponse>('/charge', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    })
   }
 
   /**
-   * Create a one-time payment link
+   * Create a customer unique token for card saving
+   * Endpoint: POST /create-customer-unique-token
+   *
+   * @param params - Token parameters
+   * @returns Created token information
    */
-  async createPaymentLink(params: CreatePaymentLinkParams): Promise<PaymentLinkResponse> {
-    return this.request<PaymentLinkResponse>('/create-payment-link', {
+  async createCustomerToken(params: CreateCustomerTokenParams): Promise<CustomerTokenResponse> {
+    return this.request<CustomerTokenResponse>('/create-customer-unique-token', {
       method: 'POST',
       body: JSON.stringify({
-        amount: params.amount,
-        order_id: params.order_id,
-        customer_email: params.customer_email,
-        customer_name: params.customer_name,
-        redirect_url: params.redirect_url,
-        webhook_url: params.webhook_url,
+        customerUniqueToken: params.customerUniqueToken,
+      }),
+    })
+  }
+
+  /**
+   * Get payment status by track ID
+   * Endpoint: GET /get-payment-status/{track_id}
+   *
+   * @param trackId - The track ID from charge response or webhook
+   * @returns Payment status details
+   */
+  async getPaymentStatus(trackId: string): Promise<PaymentStatusResponse> {
+    return this.request<PaymentStatusResponse>(`/get-payment-status/${trackId}`, {
+      method: 'GET',
+    })
+  }
+
+  /**
+   * Create a refund
+   * Endpoint: POST /create-refund
+   *
+   * @param params - Refund parameters
+   * @returns Refund information
+   */
+  async createRefund(params: CreateRefundParams): Promise<RefundResponse> {
+    return this.request<RefundResponse>('/create-refund', {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId: params.orderId,
+        totalPrice: params.totalPrice,
+        customerFirstName: params.customerFirstName,
+        customerEmail: params.customerEmail,
+        customerMobileNumber: params.customerMobileNumber,
         reference: params.reference,
-        products: params.products,
+        notifyUrl: params.notifyUrl,
       }),
     })
   }
 
   /**
-   * Create a tokenization link (for saving cards for recurring billing)
-   * Customer will be redirected to UPayments to save their card
+   * Check refund status
+   * Endpoint: GET /check-refund/{order_id}
+   *
+   * @param orderId - The order ID of the refund
+   * @returns Refund status
    */
-  async createTokenizationLink(params: TokenizeCardParams): Promise<TokenizeCardResponse> {
-    return this.request<TokenizeCardResponse>('/create-payment-link', {
+  async checkRefundStatus(orderId: string): Promise<any> {
+    return this.request(`/check-refund/${orderId}`, {
+      method: 'GET',
+    })
+  }
+
+  // ===========================================================================
+  // CARD MANAGEMENT
+  // ===========================================================================
+
+  /**
+   * Retrieve saved cards for a customer
+   * Endpoint: POST /retrieve-customer-cards
+   *
+   * @param customerUniqueToken - The customer's unique token
+   * @returns List of saved cards
+   */
+  async retrieveCustomerCards(customerUniqueToken: string): Promise<any> {
+    return this.request('/retrieve-customer-cards', {
       method: 'POST',
       body: JSON.stringify({
-        amount: 0, // Zero amount for tokenization only
-        order_id: params.order_id,
-        customer_email: params.customer_email,
-        customer_name: params.customer_name,
-        redirect_url: params.redirect_url,
-        webhook_url: params.webhook_url,
-        tokenize: true, // Request card tokenization
+        customerUniqueToken,
       }),
     })
   }
 
   /**
-   * Charge a saved card token (for recurring monthly billing)
+   * Delete a saved card
+   * Endpoint: POST /delete-customer-card
+   *
+   * @param customerUniqueToken - The customer's unique token
+   * @param cardToken - The card token to delete
    */
-  async chargeToken(params: ChargeTokenParams): Promise<ChargeTokenResponse> {
-    return this.request<ChargeTokenResponse>('/charge-token', {
+  async deleteCustomerCard(customerUniqueToken: string, cardToken: string): Promise<any> {
+    return this.request('/delete-customer-card', {
       method: 'POST',
       body: JSON.stringify({
-        token: params.token,
-        amount: params.amount,
-        order_id: params.order_id,
-        customer_email: params.customer_email,
+        customerUniqueToken,
+        cardToken,
       }),
     })
   }
 
+  // ===========================================================================
+  // WEBHOOK HANDLING
+  // ===========================================================================
+
   /**
-   * Verify webhook signature to ensure it came from UPayments
+   * Verify webhook signature using HMAC-SHA256
+   * SECURITY: Returns false when secret is missing (fail-secure)
+   *
+   * @param payload - Raw webhook payload string
+   * @param signature - Signature from webhook headers (X-UPayments-Signature)
+   * @returns Whether signature is valid
    */
   verifyWebhookSignature(payload: string, signature: string): boolean {
-    // UPayments uses HMAC-SHA256 for webhook signatures
-    const crypto = require('crypto')
-    const webhookSecret = process.env.UPAYMENTS_WEBHOOK_SECRET || ''
+    const webhookSecret = process.env.UPAYMENTS_WEBHOOK_SECRET
 
-    const expectedSignature = crypto
-      .createHmac('sha256', webhookSecret)
-      .update(payload)
-      .digest('hex')
+    // SECURITY: Fail-secure - reject when secret is not configured
+    if (!webhookSecret) {
+      console.error('[UPayments] SECURITY: UPAYMENTS_WEBHOOK_SECRET not configured - rejecting webhook')
+      return false
+    }
 
-    return signature === expectedSignature
+    // Reject empty signatures
+    if (!signature || signature.trim() === '') {
+      console.error('[UPayments] SECURITY: Empty signature received - rejecting webhook')
+      return false
+    }
+
+    // Reject empty payload
+    if (!payload || payload.trim() === '') {
+      console.error('[UPayments] SECURITY: Empty payload received - rejecting webhook')
+      return false
+    }
+
+    try {
+      const crypto = require('crypto')
+
+      // Calculate expected signature
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(payload, 'utf8')
+        .digest('hex')
+
+      // Use constant-time comparison to prevent timing attacks
+      const signatureBuffer = Buffer.from(signature, 'hex')
+      const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+
+      // Ensure buffers are same length before comparison
+      if (signatureBuffer.length !== expectedBuffer.length) {
+        console.error('[UPayments] SECURITY: Signature length mismatch - rejecting webhook')
+        return false
+      }
+
+      const isValid = crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+
+      if (!isValid) {
+        console.error('[UPayments] SECURITY: Invalid signature - rejecting webhook', {
+          receivedLength: signature.length,
+          expectedLength: expectedSignature.length,
+        })
+      }
+
+      return isValid
+    } catch (error) {
+      console.error('[UPayments] SECURITY: Signature verification error:', error)
+      return false
+    }
   }
 
   /**
-   * Parse webhook payload
+   * Check if webhook secret is properly configured
+   * Used for health checks and startup validation
+   */
+  isWebhookSecretConfigured(): boolean {
+    const secret = process.env.UPAYMENTS_WEBHOOK_SECRET
+    return !!secret && secret.length >= 16
+  }
+
+  /**
+   * Parse and validate webhook payload
+   *
+   * @param body - Raw webhook body (parsed JSON)
+   * @returns Typed webhook payload
    */
   parseWebhook(body: any): WebhookPayload {
     return {
-      order_id: body.order_id,
-      payment_id: body.payment_id,
-      transaction_id: body.transaction_id,
-      status: body.status,
-      amount: parseFloat(body.amount),
+      payment_id: body.payment_id || '',
+      result: body.result || 'NOT CAPTURED',
+      post_date: body.post_date || '',
+      tran_id: body.tran_id || '',
+      ref: body.ref || '',
+      track_id: body.track_id || '',
+      auth: body.auth || '',
+      order_id: body.order_id || '',
+      requested_order_id: body.requested_order_id,
+      refund_order_id: body.refund_order_id,
+      payment_type: body.payment_type || '',
+      invoice_id: body.invoice_id,
+      transaction_date: body.transaction_date || '',
+      receipt_id: body.receipt_id,
+      trn_udf: body.trn_udf,
+      amount: body.amount,
       currency: body.currency,
       customer_email: body.customer_email,
-      payment_method: body.payment_method,
+      customer_name: body.customer_name,
       card_token: body.card_token,
       card_last_four: body.card_last_four,
-      created_at: body.created_at,
     }
+  }
+
+  /**
+   * Check if payment was successful based on webhook result
+   *
+   * @param result - The result field from webhook
+   * @returns Whether payment was successful
+   */
+  isPaymentSuccessful(result: PaymentResult | string): boolean {
+    return result === 'CAPTURED'
+  }
+
+  // ===========================================================================
+  // HELPER METHODS
+  // ===========================================================================
+
+  /**
+   * Generate a unique order ID
+   * Format: prefix_userId_timestamp
+   */
+  generateOrderId(prefix: string, userId: string): string {
+    return `${prefix}_${userId}_${Date.now()}`
+  }
+
+  /**
+   * Generate a customer unique token (8-18 characters)
+   * Based on user ID for consistency
+   */
+  generateCustomerToken(userId: string): string {
+    // Remove hyphens from UUID and take first 12 characters
+    return userId.replace(/-/g, '').substring(0, 12)
   }
 }
 

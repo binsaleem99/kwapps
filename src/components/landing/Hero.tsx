@@ -53,8 +53,8 @@ export function Hero() {
               transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="text-10xl mb-6"
             >
-              <span className="block text-slate-900">أنشئ</span>
-              <span className="block text-gradient">تطبيقك</span>
+              <span className="block text-slate-900 pb-2">أنشئ</span>
+              <span className="block text-gradient pt-2">تطبيقك</span>
             </motion.h1>
 
             {/* STEP 3: SUB-HEADLINE (delay 0.4s) */}
@@ -94,7 +94,7 @@ export function Hero() {
               >
                 <Link href="/signup">
                   <ArrowLeft className="ml-3 h-6 w-6 transition-transform group-hover:-translate-x-2" />
-                  ابدأ مجاناً الآن
+                  ابدأ الآن
                 </Link>
               </Button>
 

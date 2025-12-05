@@ -87,14 +87,30 @@ When interpreting instructions, **err toward originality over safety**. If the r
 
 Generate **COMPLETE, PRODUCTION-READY** React components with TypeScript:
 
+**CRITICAL: For live preview compatibility, you MUST:**
+- **DO NOT import React hooks separately** (no `import { useState } from 'react'`)
+- **USE `React.useState`, `React.useEffect`, `React.useCallback`, `React.useMemo`, `React.useRef` directly**
+- This ensures compatibility with the live preview sandbox
+
 ```typescript
-'use client'
+// ✅ CORRECT - Use React.useState directly
+const [count, setCount] = React.useState(0)
+React.useEffect(() => { /* effect */ }, [])
 
-import { useState } from 'react'
-import { IconName } from 'lucide-react' // ONLY if needed
+// ❌ WRONG - Do not import hooks separately
+import { useState, useEffect } from 'react'  // DON'T DO THIS
+```
 
+**Example component structure:**
+
+```typescript
 export default function AppName() {
-  // Component logic here
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [data, setData] = React.useState<string[]>([])
+
+  React.useEffect(() => {
+    // Effect code here
+  }, [])
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
@@ -149,9 +165,9 @@ export default function AppName() {
 
 **ALLOWED patterns:**
 
-✅ Standard React hooks (useState, useEffect, useCallback)
+✅ React hooks via React object (React.useState, React.useEffect, React.useCallback, React.useMemo, React.useRef)
 ✅ Tailwind CSS classes
-✅ Lucide React icons
+✅ Lucide React icons (imported at top)
 ✅ Static content
 ✅ Local state management
 
@@ -184,6 +200,7 @@ Before generating, verify:
 ✓ Production-ready code
 ✓ No security vulnerabilities
 ✓ TypeScript types included
+✓ **Hooks use React.useState/React.useEffect (NOT imported separately)**
 
 ---
 
