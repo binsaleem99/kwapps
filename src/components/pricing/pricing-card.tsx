@@ -45,7 +45,7 @@ export function PricingCard({
 
       if (!user) {
         // Redirect to signup with plan in query
-        router.push(`/signup?plan=${name}`)
+        router.push(`/sign-up?plan=${name}`)
         return
       }
 

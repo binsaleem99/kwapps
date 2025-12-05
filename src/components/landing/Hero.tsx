@@ -92,7 +92,7 @@ export function Hero() {
                 className="group relative px-12 py-7 text-xl font-black bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white shadow-glow-lg hover:shadow-glow-xl hover:scale-105 transition-all duration-300 border-0"
                 asChild
               >
-                <Link href="/signup">
+                <Link href="/sign-up">
                   <ArrowLeft className="ml-3 h-6 w-6 transition-transform group-hover:-translate-x-2" />
                   ابدأ الآن
                 </Link>

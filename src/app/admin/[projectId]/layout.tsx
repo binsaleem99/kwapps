@@ -104,7 +104,7 @@ export default function AdminLayout({
       const res = await fetch(`/api/projects/${projectId}/admin`)
       if (!res.ok) {
         if (res.status === 401) {
-          router.push('/login')
+          router.push('/sign-in')
           return
         }
         throw new Error('Failed to load admin config')

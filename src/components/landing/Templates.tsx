@@ -232,7 +232,7 @@ export function Templates() {
             className="px-10 py-6 text-lg font-bold bg-gradient-primary text-white hover:shadow-xl transition-all shadow-glow"
             asChild
           >
-            <Link href="/signup">
+            <Link href="/sign-up">
               ابدأ من الصفر
               <svg
                 className="mr-3 h-5 w-5"

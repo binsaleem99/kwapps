@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         response.upgrade = {
           message: upgradeMessage,
           messageAr: upgradeMessageAr,
-          url: user ? '/pricing' : '/login?redirect=/pricing',
+          url: user ? '/pricing' : '/sign-in?redirect=/pricing',
         }
       }
     }
