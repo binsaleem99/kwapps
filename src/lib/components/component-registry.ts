@@ -578,6 +578,101 @@ export const COMPONENT_REGISTRY: ComponentInfo[] = [
       '<User size={24} />',
       '<Settings strokeWidth={1.5} />'
     ]
+  },
+
+  // ============================================
+  // GCC COMPONENTS - REGIONAL BUSINESS FEATURES
+  // ============================================
+
+  {
+    name: 'VATCalculator',
+    nameAr: 'حاسبة الضريبة',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { VATCalculator, VATCalculatorInline, VATCalculatorDetailed } from '@/components/gcc/VATCalculator'",
+    description: 'Automatic VAT calculation for GCC countries (Kuwait 0%, Saudi 15%, UAE 5%, Qatar 0%, Bahrain 10%, Oman 5%)',
+    descriptionAr: 'حساب تلقائي للضريبة لدول الخليج (الكويت 0%، السعودية 15%، الإمارات 5%، قطر 0%، البحرين 10%، عمان 5%)',
+    props: ['amount', 'country', 'showBreakdown', 'size'],
+    examples: [
+      '<VATCalculator amount={100} country="SA" />',
+      '<VATCalculatorInline amount={50} country="KW" />',
+      '<VATCalculatorDetailed amount={200} country="AE" />'
+    ]
+  },
+
+  {
+    name: 'GCCPhoneInput',
+    nameAr: 'إدخال هاتف الخليج',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { GCCPhoneInput, GCCPhoneInputSimple, useGCCPhone } from '@/components/gcc/GCCPhoneInput'",
+    description: 'Phone input with country-specific validation for all 6 GCC countries. Auto-validates format and digit count.',
+    descriptionAr: 'إدخال رقم هاتف مع التحقق الخاص بكل دولة من دول الخليج الستة. يتحقق تلقائياً من الصيغة وعدد الأرقام.',
+    props: ['value', 'onChange', 'country', 'allowCountryChange', 'required'],
+    examples: [
+      '<GCCPhoneInput value={phone} onChange={(val, isValid) => setPhone(val)} country="KW" />',
+      '<GCCPhoneInputSimple value={phone} onChange={handleChange} country="SA" />'
+    ]
+  },
+
+  {
+    name: 'CurrencyDisplay',
+    nameAr: 'عرض العملة',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { CurrencyDisplay, PriceDisplay, CurrencyCompact, CurrencyLarge } from '@/components/gcc/CurrencyDisplay'",
+    description: 'Currency formatter with correct decimals (3 for KWD/BHD/OMR, 2 for SAR/AED/QAR) and symbol positioning',
+    descriptionAr: 'عرض العملة مع المنازل العشرية الصحيحة (3 للدينار الكويتي/البحريني/العماني، 2 للريال السعودي/الإماراتي/القطري)',
+    props: ['amount', 'country', 'size', 'showSymbol', 'bold'],
+    examples: [
+      '<CurrencyDisplay amount={22.99} country="KW" />',
+      '<PriceDisplay amount={299} country="SA" originalAmount={399} />',
+      '<CurrencyLarge amount={99.99} country="AE" />'
+    ]
+  },
+
+  {
+    name: 'ArabicInvoice',
+    nameAr: 'فاتورة عربية',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { ArabicInvoice } from '@/components/gcc/ArabicInvoice'",
+    description: 'Full-featured RTL invoice template with VAT calculation, print support, and QR code (for Saudi e-invoicing)',
+    descriptionAr: 'قالب فاتورة كامل بتخطيط من اليمين لليسار مع حساب الضريبة ودعم الطباعة ورمز QR (للفوترة الإلكترونية السعودية)',
+    props: ['invoiceNumber', 'invoiceDate', 'items', 'business', 'customer', 'country', 'notes', 'showQR'],
+    examples: [
+      '<ArabicInvoice invoiceNumber="INV-001" items={items} business={businessInfo} customer={customerInfo} country="KW" />'
+    ]
+  },
+
+  {
+    name: 'GCCAddressForm',
+    nameAr: 'نموذج عنوان الخليج',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { GCCAddressForm, AddressDisplay, useGCCAddress } from '@/components/gcc/GCCAddressForm'",
+    description: 'Address form with country-specific fields (governorate/region/emirate) and postal code validation',
+    descriptionAr: 'نموذج عنوان مع حقول خاصة بكل دولة (محافظة/منطقة/إمارة) والتحقق من الرمز البريدي',
+    props: ['value', 'onChange', 'country', 'required', 'showCountrySelector'],
+    examples: [
+      '<GCCAddressForm value={address} onChange={setAddress} country="KW" required />',
+      '<AddressDisplay address={address} />'
+    ]
+  },
+
+  {
+    name: 'ContactFormArabic',
+    nameAr: 'نموذج تواصل عربي',
+    category: 'GCC Business',
+    categoryAr: 'أعمال دول الخليج',
+    importStatement: "import { ContactFormArabic, ContactFormMinimal } from '@/components/gcc/ContactFormArabic'",
+    description: 'Complete RTL contact form with GCC phone validation, email validation, and success state',
+    descriptionAr: 'نموذج تواصل كامل من اليمين لليسار مع التحقق من هواتف الخليج والبريد الإلكتروني وحالة النجاح',
+    props: ['country', 'onSubmit', 'allowCountryChange', 'includeName', 'includeSubject', 'includePhone'],
+    examples: [
+      '<ContactFormArabic country="KW" onSubmit={async (data) => await sendEmail(data)} />',
+      '<ContactFormMinimal onSubmit={async (data) => await sendEmail(data)} />'
+    ]
   }
 ]
 
