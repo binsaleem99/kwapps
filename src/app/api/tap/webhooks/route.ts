@@ -227,14 +227,20 @@ async function handleSubscriptionActivated(data: any) {
 async function handleSubscriptionRenewed(data: any) {
   const { id, current_period_start, current_period_end } = data
 
-  // Update period
+  // Update period and increment renewal count
+  const { data: currentSub } = await supabase
+    .from('tap_subscriptions')
+    .select('renewal_count')
+    .eq('tap_subscription_id', id)
+    .single()
+
   await supabase
     .from('tap_subscriptions')
     .update({
       status: 'active',
       current_period_start,
       current_period_end,
-      renewal_count: supabase.sql`renewal_count + 1`,
+      renewal_count: (currentSub?.renewal_count || 0) + 1,
       updated_at: new Date().toISOString(),
     })
     .eq('tap_subscription_id', id)
@@ -305,12 +311,18 @@ async function handleInvoicePaid(data: any) {
 async function handlePaymentFailed(data: any) {
   const { id, subscription, failure_reason } = data
 
-  // Update subscription to past_due
+  // Update subscription to past_due and increment failed payment count
+  const { data: currentSub } = await supabase
+    .from('tap_subscriptions')
+    .select('failed_payment_count')
+    .eq('tap_subscription_id', subscription?.id)
+    .single()
+
   await supabase
     .from('tap_subscriptions')
     .update({
       status: 'past_due',
-      failed_payment_count: supabase.sql`failed_payment_count + 1`,
+      failed_payment_count: (currentSub?.failed_payment_count || 0) + 1,
       last_payment_attempt: new Date().toISOString(),
     })
     .eq('tap_subscription_id', subscription?.id)
