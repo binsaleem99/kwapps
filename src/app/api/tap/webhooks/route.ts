@@ -21,39 +21,82 @@ const supabase = createClient(
 const TAP_WEBHOOK_SECRET = process.env.TAP_WEBHOOK_SECRET!
 
 /**
- * Verify Tap webhook signature
+ * Verify Tap webhook signature per official Tap documentation
+ * Reference: https://developers.tap.company/docs/webhooks
+ *
+ * Tap uses hashstring format:
+ * "x_id" + id + "x_amount" + amount + "x_currency" + currency +
+ * "x_gateway_reference" + gateway_ref + "x_payment_reference" + payment_ref +
+ * "x_status" + status + "x_created" + created
  */
-function verifySignature(payload: string, signature: string): boolean {
+function verifyTapWebhook(payload: any, receivedHash: string): boolean {
   try {
-    const expectedSignature = crypto
+    if (!receivedHash) {
+      console.error('No hashstring provided in webhook')
+      return false
+    }
+
+    // Extract required fields from payload
+    const { id, amount, currency, status, created } = payload
+    const gateway_ref = payload.gateway_reference || ''
+    const payment_ref = payload.payment_reference || ''
+
+    // Construct hashstring per Tap specification
+    const hashString =
+      `x_id${id}` +
+      `x_amount${amount}` +
+      `x_currency${currency}` +
+      `x_gateway_reference${gateway_ref}` +
+      `x_payment_reference${payment_ref}` +
+      `x_status${status}` +
+      `x_created${created}`
+
+    // Generate HMAC-SHA256 hash
+    const expectedHash = crypto
       .createHmac('sha256', TAP_WEBHOOK_SECRET)
-      .update(payload)
+      .update(hashString)
       .digest('hex')
 
+    // Timing-safe comparison to prevent timing attacks
     return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
+      Buffer.from(receivedHash),
+      Buffer.from(expectedHash)
     )
   } catch (error) {
+    console.error('Webhook verification error:', error)
     return false
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.text()
-    const signature = request.headers.get('tap-signature') || ''
+    const body = await request.text()
+    const event = JSON.parse(body)
+    const hashstring = request.headers.get('hashstring') || '' // FIXED: Correct header name
 
-    // Verify webhook authenticity
-    if (!verifySignature(payload, signature)) {
+    // Verify webhook authenticity with proper Tap hashstring method
+    if (!verifyTapWebhook(event, hashstring)) {
       console.error('Invalid Tap webhook signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    const event = JSON.parse(payload)
     const { id: eventId, type, data } = event
 
     console.log(`Processing Tap webhook: ${type}`, { eventId })
+
+    // Check for duplicate webhooks (idempotency)
+    const { data: existingEvent } = await supabase
+      .from('webhook_events')
+      .select('id')
+      .eq('provider', 'tap')
+      .eq('event_id', eventId)
+      .eq('processed', true)
+      .maybeSingle()
+
+    if (existingEvent) {
+      console.log(`Webhook ${eventId} already processed, skipping`)
+      return NextResponse.json({ received: true, status: 'duplicate' })
+    }
 
     // Log webhook for debugging
     await supabase.from('webhook_events').insert({
