@@ -14,7 +14,7 @@
 
 'use client'
 
-import { Calendar, Mail, CreditCard, X } from 'lucide-react'
+import { Calendar, Mail, CreditCard, X, Shield, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface TrialTimelineStepProps {

@@ -8,7 +8,7 @@
  * - "حذف الصورة" → Identify which image
  */
 
-interface DOMAnalysisRequest {
+export interface DOMAnalysisRequest {
   projectCode: string
   userRequest: string // Arabic: "غيّر لون الخلفية إلى أزرق"
   selectedElement?: string
@@ -16,7 +16,7 @@ interface DOMAnalysisRequest {
   previousChanges: Change[]
 }
 
-interface DOMAnalysisResponse {
+export interface DOMAnalysisResponse {
   understood: boolean
   interpretation: string // Arabic explanation
   targetElements: ElementTarget[]
@@ -25,14 +25,14 @@ interface DOMAnalysisResponse {
   creditsCost: number
 }
 
-interface ElementTarget {
+export interface ElementTarget {
   path: string // CSS selector
   type: string // 'heading', 'button', 'section', etc.
   currentValue?: string
   confidence: number // 0-1
 }
 
-interface ProposedChange {
+export interface ProposedChange {
   id: string
   type: 'text' | 'color' | 'layout' | 'add' | 'remove' | 'image'
   description: string
@@ -42,7 +42,7 @@ interface ProposedChange {
   credits: number
 }
 
-interface Change {
+export interface Change {
   type: string
   description: string
   timestamp: string

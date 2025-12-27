@@ -199,7 +199,7 @@ export function PaywallModal({
         {currentStep === 'offers' && (
           <OffersStep
             selectedPlan={selectedPlan}
-            onPlanChange={setSelectedPlan}
+            onPlanChange={(plan: string) => setSelectedPlan(plan as typeof selectedPlan)}
             withTrial={withTrial}
             onTrialToggle={setWithTrial}
             discountCode={discountCode}
