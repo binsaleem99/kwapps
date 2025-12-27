@@ -343,17 +343,22 @@ async function handleTrialEnding(data: any) {
   // Send reminder email 2 days before trial ends
   const { data: subscription } = await supabase
     .from('tap_subscriptions')
-    .select('user_id, users:user_id(email, name)')
+    .select('user_id')
     .eq('tap_subscription_id', data.id)
     .single()
 
   if (subscription) {
-    await supabase.from('email_queue').insert({
-      user_id: subscription.user_id,
-      template: 'trial_ending',
-      recipient_email: subscription.users.email,
-      data: { trial_end: data.trial_end },
-    })
+    // Get user email separately
+    const { data: user } = await supabase.auth.admin.getUserById(subscription.user_id)
+
+    if (user?.user?.email) {
+      await supabase.from('email_queue').insert({
+        user_id: subscription.user_id,
+        template: 'trial_ending',
+        recipient_email: user.user.email,
+        data: { trial_end: data.trial_end },
+      })
+    }
   }
 }
 
