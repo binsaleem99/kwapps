@@ -42,3 +42,4 @@ next-env.d.ts
 .env*.local
 nul
 .claude/settings.local.json
+.env.local
